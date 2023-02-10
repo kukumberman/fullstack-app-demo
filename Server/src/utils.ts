@@ -67,11 +67,19 @@ export class ExternalLogin {
 import { FastifyRequest, FastifyReply } from "fastify"
 
 export class UserIdentifier {
-  readonly COOKIE_KEY = "token"
+  static readonly COOKIE_NAME = "token"
 
-  constructor(private request: FastifyRequest, private reply: FastifyReply) {}
+  static async getUser(request: FastifyRequest) {
+    const cookieToken: string | undefined = request.cookies[UserIdentifier.COOKIE_NAME]
 
-  hasCookie() {
-    const cookieToken: string | undefined = this.request.cookies[this.COOKIE_KEY]
+    if (cookieToken == undefined) {
+      return null
+    }
+
+    const instance = request.server
+    const payload = instance.jwt.verify(cookieToken) as any
+    const id = payload.id
+    const user = await instance.db.findUserById(id)
+    return user
   }
 }

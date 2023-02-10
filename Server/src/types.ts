@@ -23,6 +23,7 @@ export interface IDatabase {
   findUserById(id: string): Promise<UserSchema | null>
   findUserByDiscordId(id: string): Promise<UserSchema | null>
   findUserByEmail(email: string): Promise<UserSchema | null>
+  save(): Promise<void>
 }
 
 export interface UserSchema {
