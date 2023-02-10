@@ -3,82 +3,60 @@ import fs from "fs"
 import { Low } from "lowdb"
 import { JSONFile } from "lowdb/node"
 
-import { IAuthenticationFields, IDatabase, UserSchema } from "../types.js"
-import { generateId, generateTimestampString } from "../utils.js"
+import { UserSchema } from "../types.js"
+import { UserModel } from "./UserModel.js"
 
-export class UserModel implements UserSchema {
-  id: string
-  nickname: string
-  createdAt: string
-  updatedAt: string
-  friends: Array<string>
-  authentication: IAuthenticationFields
+type Predicate<T> = (value: T) => boolean
 
-  constructor(nickname: string = "") {
-    this.id = generateId()
-    this.nickname = nickname
-    const now = generateTimestampString()
-    this.createdAt = now
-    this.updatedAt = now
-    this.friends = []
-    this.authentication = {
-      discord: null,
-      basic: null,
-    }
-  }
-
-  discordNickname() {
-    const discord = this.authentication.discord
-    if (discord === null) {
-      return ""
-    }
-    return discord.username + "#" + discord.discriminator
-  }
-}
-
-type Data = UserSchema[]
-
-export default class UserDatabase implements IDatabase {
-  private db!: Low<Data>
+export class UserDatabase {
+  private db!: Low<UserSchema[]>
 
   constructor(private name: string) {}
+
+  at(index: number): UserModel {
+    return new UserModel(this.db.data![index])
+  }
+
+  findIndex(predicate: Predicate<UserSchema>): number {
+    return this.db.data!.findIndex(predicate)
+  }
 
   async connect() {
     const pathToFile = path.resolve(`./db/${this.name}.json`)
     if (!fs.existsSync(pathToFile)) {
       fs.writeFileSync(pathToFile, JSON.stringify([]))
     }
-    this.db = new Low(new JSONFile<Data>(pathToFile))
+    this.db = new Low(new JSONFile<UserSchema[]>(pathToFile))
     await this.db.read()
   }
 
-  async addUser(user: UserSchema): Promise<void> {
-    this.db.data!.push(user)
+  async addUser(user: UserModel): Promise<void> {
+    this.db.data!.push(user.data)
     await this.db.write()
   }
 
-  async findUserById(id: string): Promise<UserSchema | null> {
-    const index = this.db.data!.findIndex((entry) => entry.id === id)
+  async findUserById(id: string): Promise<UserModel | null> {
+    const index = this.findIndex((entry) => entry.id === id)
     if (index != -1) {
-      return this.db.data![index]
+      return this.at(index)
     }
 
     return null
   }
 
-  async findUserByDiscordId(id: string): Promise<UserSchema | null> {
-    const index = this.db.data!.findIndex((entry) => entry.authentication.discord?.id === id)
+  async findUserByDiscordId(id: string): Promise<UserModel | null> {
+    const index = this.findIndex((entry) => entry.authentication.discord?.id === id)
     if (index != -1) {
-      return this.db.data![index]
+      return this.at(index)
     }
 
     return null
   }
 
-  async findUserByEmail(email: string): Promise<UserSchema | null> {
-    const index = this.db.data!.findIndex((entry) => entry.authentication.basic?.email === email)
+  async findUserByEmail(email: string): Promise<UserModel | null> {
+    const index = this.findIndex((entry) => entry.authentication.basic?.email === email)
     if (index != -1) {
-      return this.db.data![index]
+      return this.at(index)
     }
 
     return null

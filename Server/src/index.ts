@@ -5,9 +5,9 @@ import fastifyJwt from "@fastify/jwt"
 
 import { registerOAuth2 } from "./oauth.js"
 
-import UserDatabase from "./db/lowdb.js"
+import { UserDatabase } from "./db/lowdb.js"
 import { UserIdentifier } from "./utils.js"
-import { UserSchema } from "./types.js"
+import { UserModel } from "./db/UserModel.js"
 
 dotenv.config()
 
@@ -28,7 +28,7 @@ app.register(fastifyJwt, {
 
 app.get("/", async (request, reply) => {
   try {
-    const user: UserSchema | null = await UserIdentifier.getUser(request)
+    const user: UserModel | null = await UserIdentifier.getUserFromCookie(request)
     if (user != null) {
       return user
     }
@@ -39,6 +39,20 @@ app.get("/", async (request, reply) => {
   return { message: "hello, world" }
 })
 
+// app.get<{ Querystring: { email: string; password: string } }>(
+//   "/test/login",
+//   async (request, reply) => {
+//     const email = request.query.email
+//     const user = await request.server.db.findUserByEmail(email)
+//     if (user != null) {
+//       const token = request.server.jwt.sign({ id: user.data.id })
+//       reply.setCookie(UserIdentifier.COOKIE_NAME, token)
+//       return user.data
+//     }
+
+//     return { message: "user not found" }
+//   }
+// )
 registerOAuth2(app)
 
 const opts: FastifyListenOptions = {

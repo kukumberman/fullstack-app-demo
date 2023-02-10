@@ -17,20 +17,14 @@ export interface IBasicAuthFields {
   password: string
 }
 
-export interface IDatabase {
-  connect(): Promise<void>
-  addUser(user: UserSchema): Promise<void>
-  findUserById(id: string): Promise<UserSchema | null>
-  findUserByDiscordId(id: string): Promise<UserSchema | null>
-  findUserByEmail(email: string): Promise<UserSchema | null>
-  save(): Promise<void>
-}
-
 export interface UserSchema {
   id: string
   nickname: string
   createdAt: string
   updatedAt: string
-  friends: Array<string>
   authentication: IAuthenticationFields
+}
+
+export type UserTokenPayload = {
+  id: string
 }

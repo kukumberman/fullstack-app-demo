@@ -6,9 +6,10 @@ import oauthPlugin, {
   OAuth2Namespace,
   Token,
 } from "@fastify/oauth2"
-import { IDatabase } from "./types.js"
-import { UserModel } from "./db/lowdb.js"
+import { UserTokenPayload } from "./types.js"
+import { UserDatabase } from "./db/lowdb.js"
 import { ExternalLogin, generateTimestampString, UserIdentifier } from "./utils.js"
+import { UserModel } from "./db/UserModel.js"
 
 const GET_OAUTH2 = "customOAuth2"
 const GET_DATABASE = "db"
@@ -16,7 +17,7 @@ const GET_DATABASE = "db"
 declare module "fastify" {
   interface FastifyInstance {
     [GET_OAUTH2]: Map<string, OAuth2Handler>
-    [GET_DATABASE]: IDatabase
+    [GET_DATABASE]: UserDatabase
   }
 }
 
@@ -31,9 +32,9 @@ abstract class OAuth2Handler {
 
   abstract getProviderConfiguration(): ProviderConfiguration
 
-  abstract createOrUpdateUser(db: IDatabase, fields: any): Promise<string>
+  abstract createOrUpdateUser(db: UserDatabase, fields: any): Promise<string>
 
-  abstract assign(): Promise<void>
+  abstract assign(user: UserModel, fields: any): void
 
   getPropertyName() {
     return `${this.name}OAuth2`
@@ -68,11 +69,11 @@ abstract class OAuth2Handler {
       },
       callbackUri: `http://localhost:${process.env.PORT!}/login/${this.name}/callback`,
       generateStateFunction(request: any) {
-        const guid = request.query.guid
-        if (guid === undefined) {
+        const state: string | undefined = request.query.state
+        if (state === undefined || state.length === 0) {
           return "none"
         }
-        return guid
+        return state
       },
       checkStateFunction(returnedState: string, callback: Function) {
         callback()
@@ -97,22 +98,22 @@ class DiscordOAuth2Handler extends OAuth2Handler {
     return oauthPlugin.fastifyOauth2.DISCORD_CONFIGURATION
   }
 
-  async createOrUpdateUser(db: IDatabase, fields: any): Promise<string> {
+  async createOrUpdateUser(db: UserDatabase, fields: any): Promise<string> {
     const now = generateTimestampString()
     const candidate = await db.findUserByDiscordId(fields.id)
     if (candidate != null) {
-      const discord = candidate.authentication.discord!
+      const discord = candidate.data.authentication.discord!
       discord.id = fields.id
       discord.username = fields.username
       discord.avatar = fields.avatar
       discord.discriminator = fields.discriminator
       discord.updatedAt = now
-      candidate.updatedAt = now
+      candidate.data.updatedAt = now
       await db.save()
-      return candidate.id
+      return candidate.data.id
     } else {
-      const newUser = new UserModel()
-      newUser.authentication.discord = {
+      const newUser = UserModel.Empty()
+      newUser.data.authentication.discord = {
         id: fields.id,
         username: fields.username,
         avatar: fields.avatar,
@@ -121,12 +122,21 @@ class DiscordOAuth2Handler extends OAuth2Handler {
         updatedAt: now,
       }
       await db.addUser(newUser)
-      return newUser.id
+      return newUser.data.id
     }
   }
 
-  assign(): Promise<void> {
-    throw new Error("Method not implemented.")
+  assign(user: UserModel, fields: any) {
+    const now = generateTimestampString()
+    user.data.authentication.discord = {
+      id: fields.id,
+      username: fields.username,
+      avatar: fields.avatar,
+      discriminator: fields.discriminator,
+      createdAt: now,
+      updatedAt: now,
+    }
+    user.data.updatedAt = now
   }
 }
 
@@ -156,7 +166,7 @@ export function registerOAuth2(instance: FastifyInstance) {
   instance.get<IExternalLoginRequest>("/login/external", (request, reply) => {
     const guid = request.query.guid
 
-    if (guid === undefined) {
+    if (guid === undefined || guid.length === 0) {
       return {
         message: "not allowed",
       }
@@ -222,21 +232,62 @@ export function registerOAuth2(instance: FastifyInstance) {
     const data: any = await handler.identify(token)
 
     const state: string = request.query.state
-    const shouldConnect = false // ("state.token" exists && is valid) && (user.authentication[methodName] === null)
+    const [stateId, stateValue] = decodeURIComponent(state).split(":")
 
-    if (shouldConnect) {
-      // await handler.assign()
-    } else {
-      const db = request.server[GET_DATABASE]
-      const id = await handler.createOrUpdateUser(db, data)
-      const token = request.server.jwt.sign({ id })
-      //todo: set "expire_date" (cookie and token)
-      reply.setCookie(UserIdentifier.COOKIE_NAME, token, { path: "/" })
-      reply.redirect("/")
+    const db = request.server[GET_DATABASE]
 
-      if (state.length > 0 && state != "none") {
-        externalLogin.saveTokenInMemory(state, token)
+    //todo: also handle token validation before callback method?
+    if (stateId === "token") {
+      try {
+        const payload = request.server.jwt.verify(stateValue) as UserTokenPayload
+        const id = payload.id
+        const user = await db.findUserById(id)
+        if (user == null) {
+          return {
+            message: "how did you get this token?",
+          }
+        }
+
+        if (user.hasConnectedAuth(methodName)) {
+          return {
+            message: `${methodName} is already connected`,
+          }
+        }
+
+        handler.assign(user, data)
+        await db.save()
+
+        return {
+          message: `${methodName} assigned successfully`,
+        }
+      } catch (error) {
+        // someone can manually send request with fake token, so jwt error is handled here
+
+        if (error instanceof Error) {
+          return {
+            error: {
+              name: error.name,
+              message: error.message,
+            },
+          }
+        }
+
+        return {
+          message: "invalid token",
+        }
       }
+    }
+
+    const id = await handler.createOrUpdateUser(db, data)
+    const accessToken = request.server.jwt.sign({ id })
+    //todo: set "expire_date" (for cookie and accessToken)
+    reply.setCookie(UserIdentifier.COOKIE_NAME, accessToken, { path: "/" })
+    reply.redirect("/")
+
+    const notEmptyState = state.length > 0 && state != "none"
+    const isValidGuid = stateId === "guid" && stateValue.length > 0
+    if (notEmptyState && isValidGuid) {
+      externalLogin.saveTokenInMemory(stateValue, accessToken)
     }
   })
 }

@@ -65,11 +65,12 @@ export class ExternalLogin {
 
 //todo
 import { FastifyRequest, FastifyReply } from "fastify"
+import { UserTokenPayload } from "./types.js"
 
 export class UserIdentifier {
   static readonly COOKIE_NAME = "token"
 
-  static async getUser(request: FastifyRequest) {
+  static async getUserFromCookie(request: FastifyRequest) {
     const cookieToken: string | undefined = request.cookies[UserIdentifier.COOKIE_NAME]
 
     if (cookieToken == undefined) {
@@ -77,7 +78,7 @@ export class UserIdentifier {
     }
 
     const instance = request.server
-    const payload = instance.jwt.verify(cookieToken) as any
+    const payload = instance.jwt.verify(cookieToken) as UserTokenPayload
     const id = payload.id
     const user = await instance.db.findUserById(id)
     return user
