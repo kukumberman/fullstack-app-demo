@@ -17,6 +17,7 @@ export class UserModel extends BaseModel<UserSchema> {
       authentication: {
         basic: null,
         discord: null,
+        google: null,
       },
     })
   }

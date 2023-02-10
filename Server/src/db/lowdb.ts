@@ -62,6 +62,15 @@ export class UserDatabase {
     return null
   }
 
+  async findUserByGoogleId(id: string): Promise<UserModel | null> {
+    const index = this.findIndex((entry) => entry.authentication.google?.id === id)
+    if (index != -1) {
+      return this.at(index)
+    }
+
+    return null
+  }
+
   async save() {
     await this.db.write()
   }

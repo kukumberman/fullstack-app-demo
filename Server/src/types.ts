@@ -1,5 +1,6 @@
 export interface IAuthenticationFields {
   discord: IDiscordAuthFields | null
+  google: IGoogleAuthFields | null
   basic: IBasicAuthFields | null
 }
 
@@ -8,6 +9,15 @@ export interface IDiscordAuthFields {
   username: string
   avatar: string
   discriminator: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface IGoogleAuthFields {
+  id: string
+  email: string
+  name: string
+  picture: string
   createdAt: string
   updatedAt: string
 }

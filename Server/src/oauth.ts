@@ -140,8 +140,65 @@ class DiscordOAuth2Handler extends OAuth2Handler {
   }
 }
 
+class GoogleOAuth2Handler extends OAuth2Handler {
+  constructor() {
+    super(
+      "google",
+      process.env.GOOGLE_CLIENT_ID!,
+      process.env.GOOGLE_CLIENT_SECRET!,
+      ["profile", "email"],
+      "https://www.googleapis.com/oauth2/v2/userinfo"
+    )
+  }
+
+  getProviderConfiguration(): oauthPlugin.ProviderConfiguration {
+    return oauthPlugin.fastifyOauth2.GOOGLE_CONFIGURATION
+  }
+
+  async createOrUpdateUser(db: UserDatabase, fields: any): Promise<string> {
+    const now = generateTimestampString()
+    const candidate = await db.findUserByGoogleId(fields.id)
+    if (candidate != null) {
+      const google = candidate.data.authentication.google!
+      google.id = fields.id
+      google.email = fields.email
+      google.name = fields.name
+      google.picture = fields.picture
+      google.updatedAt = now
+      candidate.data.updatedAt = now
+      await db.save()
+      return candidate.data.id
+    } else {
+      const newUser = UserModel.Empty()
+      newUser.data.authentication.google = {
+        id: fields.id,
+        email: fields.email,
+        name: fields.name,
+        picture: fields.picture,
+        createdAt: now,
+        updatedAt: now,
+      }
+      await db.addUser(newUser)
+      return newUser.data.id
+    }
+  }
+
+  assign(user: UserModel, fields: any): void {
+    const now = generateTimestampString()
+    user.data.authentication.google = {
+      id: fields.id,
+      email: fields.email,
+      name: fields.name,
+      picture: fields.picture,
+      createdAt: now,
+      updatedAt: now,
+    }
+    user.data.updatedAt = now
+  }
+}
+
 export function registerOAuth2(instance: FastifyInstance) {
-  const methods: OAuth2Handler[] = [new DiscordOAuth2Handler()]
+  const methods: OAuth2Handler[] = [new DiscordOAuth2Handler(), new GoogleOAuth2Handler()]
   methods.forEach((m) => m.register(instance))
 
   const map = new Map<string, OAuth2Handler>()
