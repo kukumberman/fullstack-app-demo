@@ -1,11 +1,16 @@
-export interface IAuthenticationFields {
-  discord: IDiscordAuthFields | null
-  google: IGoogleAuthFields | null
-  basic: IBasicAuthFields | null
+export type ObjectId = string
+
+export type DiscordId = string
+
+export type GoogleId = string
+
+export type SignInMethods = {
+  discord: DiscordSignInFields | null
+  google: GoogleSignInFields | null
 }
 
-export interface IDiscordAuthFields {
-  id: string
+export type DiscordSignInFields = {
+  id: DiscordId
   username: string
   avatar: string
   discriminator: string
@@ -13,8 +18,8 @@ export interface IDiscordAuthFields {
   updatedAt: string
 }
 
-export interface IGoogleAuthFields {
-  id: string
+export type GoogleSignInFields = {
+  id: GoogleId
   email: string
   name: string
   picture: string
@@ -22,17 +27,18 @@ export interface IGoogleAuthFields {
   updatedAt: string
 }
 
-export interface IBasicAuthFields {
+export type LoginFields = {
   email: string
   password: string
 }
 
 export interface UserSchema {
-  id: string
+  id: ObjectId
   nickname: string
   createdAt: string
   updatedAt: string
-  authentication: IAuthenticationFields
+  login: LoginFields
+  signIn: SignInMethods
 }
 
 export type UserTokenPayload = {

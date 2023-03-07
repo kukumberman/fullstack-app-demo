@@ -29,14 +29,14 @@ interface IPingData {
 export class ExternalLogin {
   private map: Map<string, IPingData>
 
-  constructor() {
+  constructor(private expirationTimeInSeconds: number) {
     this.map = new Map<string, IPingData>()
   }
 
   saveTokenInMemory(guid: string, token: string) {
     this.map.set(guid, {
       token,
-      expires: Date.now() + 10 * 1000,
+      expires: Date.now() + this.expirationTimeInSeconds * 1000,
       expired() {
         return Date.now() > this.expires
       },
@@ -65,7 +65,7 @@ export class ExternalLogin {
 
 //todo
 import { FastifyRequest, FastifyReply } from "fastify"
-import { UserTokenPayload } from "./types.js"
+import { UserTokenPayload } from "./types"
 
 export class UserIdentifier {
   static readonly COOKIE_NAME = "token"

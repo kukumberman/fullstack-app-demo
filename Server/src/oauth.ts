@@ -1,4 +1,4 @@
-import fetch from "node-fetch"
+import axios from "axios"
 import { FastifyInstance } from "fastify"
 import oauthPlugin, {
   FastifyOAuth2Options,
@@ -6,10 +6,10 @@ import oauthPlugin, {
   OAuth2Namespace,
   Token,
 } from "@fastify/oauth2"
-import { UserTokenPayload } from "./types.js"
-import { UserDatabase } from "./db/lowdb.js"
-import { ExternalLogin, generateTimestampString, UserIdentifier } from "./utils.js"
-import { UserModel } from "./db/UserModel.js"
+import { UserTokenPayload } from "./types"
+import { UserDatabase } from "./db/lowdb"
+import { ExternalLogin, generateTimestampString, UserIdentifier } from "./utils"
+import { UserModel } from "./db/UserModel"
 
 const GET_OAUTH2 = "customOAuth2"
 const GET_DATABASE = "db"
@@ -46,13 +46,12 @@ abstract class OAuth2Handler {
   }
 
   async identify(token: Token): Promise<any> {
-    const response = await fetch(this.api, {
+    const response = await axios.get(this.api, {
       headers: {
         Authorization: `${token.token_type} ${token.access_token}`,
       },
     })
-    const data = await response.json()
-    return data
+    return response.data
   }
 
   register(instance: FastifyInstance) {
@@ -94,15 +93,15 @@ class DiscordOAuth2Handler extends OAuth2Handler {
     )
   }
 
-  getProviderConfiguration(): oauthPlugin.ProviderConfiguration {
-    return oauthPlugin.fastifyOauth2.DISCORD_CONFIGURATION
+  getProviderConfiguration(): ProviderConfiguration {
+    return oauthPlugin.DISCORD_CONFIGURATION
   }
 
   async createOrUpdateUser(db: UserDatabase, fields: any): Promise<string> {
     const now = generateTimestampString()
     const candidate = await db.findUserByDiscordId(fields.id)
     if (candidate != null) {
-      const discord = candidate.data.authentication.discord!
+      const discord = candidate.data.signIn.discord!
       discord.id = fields.id
       discord.username = fields.username
       discord.avatar = fields.avatar
@@ -113,7 +112,7 @@ class DiscordOAuth2Handler extends OAuth2Handler {
       return candidate.data.id
     } else {
       const newUser = UserModel.Empty()
-      newUser.data.authentication.discord = {
+      newUser.data.signIn.discord = {
         id: fields.id,
         username: fields.username,
         avatar: fields.avatar,
@@ -128,7 +127,7 @@ class DiscordOAuth2Handler extends OAuth2Handler {
 
   assign(user: UserModel, fields: any) {
     const now = generateTimestampString()
-    user.data.authentication.discord = {
+    user.data.signIn.discord = {
       id: fields.id,
       username: fields.username,
       avatar: fields.avatar,
@@ -151,15 +150,15 @@ class GoogleOAuth2Handler extends OAuth2Handler {
     )
   }
 
-  getProviderConfiguration(): oauthPlugin.ProviderConfiguration {
-    return oauthPlugin.fastifyOauth2.GOOGLE_CONFIGURATION
+  getProviderConfiguration(): ProviderConfiguration {
+    return oauthPlugin.GOOGLE_CONFIGURATION
   }
 
   async createOrUpdateUser(db: UserDatabase, fields: any): Promise<string> {
     const now = generateTimestampString()
     const candidate = await db.findUserByGoogleId(fields.id)
     if (candidate != null) {
-      const google = candidate.data.authentication.google!
+      const google = candidate.data.signIn.google!
       google.id = fields.id
       google.email = fields.email
       google.name = fields.name
@@ -170,7 +169,7 @@ class GoogleOAuth2Handler extends OAuth2Handler {
       return candidate.data.id
     } else {
       const newUser = UserModel.Empty()
-      newUser.data.authentication.google = {
+      newUser.data.signIn.google = {
         id: fields.id,
         email: fields.email,
         name: fields.name,
@@ -185,7 +184,7 @@ class GoogleOAuth2Handler extends OAuth2Handler {
 
   assign(user: UserModel, fields: any): void {
     const now = generateTimestampString()
-    user.data.authentication.google = {
+    user.data.signIn.google = {
       id: fields.id,
       email: fields.email,
       name: fields.name,
@@ -212,7 +211,7 @@ export function registerOAuth2(instance: FastifyInstance) {
     return keys
   })
 
-  const externalLogin = new ExternalLogin()
+  const externalLogin = new ExternalLogin(10)
 
   interface IExternalLoginRequest {
     Querystring: {
@@ -305,7 +304,7 @@ export function registerOAuth2(instance: FastifyInstance) {
           }
         }
 
-        if (user.hasConnectedAuth(methodName)) {
+        if (user.hasConnectedMethod(methodName)) {
           return {
             message: `${methodName} is already connected`,
           }

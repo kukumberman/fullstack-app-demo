@@ -1,15 +1,14 @@
 import path from "path"
 import fs from "fs"
-import { Low } from "lowdb"
-import { JSONFile } from "lowdb/node"
 
-import { UserSchema } from "../types.js"
-import { UserModel } from "./UserModel.js"
+import { UserSchema } from "../types"
+import { UserModel } from "./UserModel"
+import { SimpleDatabase } from "./SimpleDatabase"
 
 type Predicate<T> = (value: T) => boolean
 
 export class UserDatabase {
-  private db!: Low<UserSchema[]>
+  private db!: SimpleDatabase<UserSchema>
 
   constructor(private name: string) {}
 
@@ -26,7 +25,7 @@ export class UserDatabase {
     if (!fs.existsSync(pathToFile)) {
       fs.writeFileSync(pathToFile, JSON.stringify([]))
     }
-    this.db = new Low(new JSONFile<UserSchema[]>(pathToFile))
+    this.db = new SimpleDatabase<UserSchema>(pathToFile)
     await this.db.read()
   }
 
@@ -45,7 +44,7 @@ export class UserDatabase {
   }
 
   async findUserByDiscordId(id: string): Promise<UserModel | null> {
-    const index = this.findIndex((entry) => entry.authentication.discord?.id === id)
+    const index = this.findIndex((entry) => entry.signIn.discord?.id === id)
     if (index != -1) {
       return this.at(index)
     }
@@ -54,7 +53,7 @@ export class UserDatabase {
   }
 
   async findUserByEmail(email: string): Promise<UserModel | null> {
-    const index = this.findIndex((entry) => entry.authentication.basic?.email === email)
+    const index = this.findIndex((entry) => entry.login.email === email)
     if (index != -1) {
       return this.at(index)
     }
@@ -63,7 +62,7 @@ export class UserDatabase {
   }
 
   async findUserByGoogleId(id: string): Promise<UserModel | null> {
-    const index = this.findIndex((entry) => entry.authentication.google?.id === id)
+    const index = this.findIndex((entry) => entry.signIn.google?.id === id)
     if (index != -1) {
       return this.at(index)
     }
