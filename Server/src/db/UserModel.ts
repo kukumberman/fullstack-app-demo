@@ -6,12 +6,11 @@ export abstract class BaseModel<T> {
 }
 
 export class UserModel extends BaseModel<UserSchema> {
-  static Empty(): UserModel {
+  static New(): UserModel {
     const now = generateTimestampString()
 
     return new UserModel({
       id: generateId(),
-      nickname: "",
       createdAt: now,
       updatedAt: now,
       login: {
@@ -21,6 +20,10 @@ export class UserModel extends BaseModel<UserSchema> {
       signIn: {
         discord: null,
         google: null,
+      },
+      app: {
+        clickCounter: 0,
+        experienceAmount: 0,
       },
     })
   }

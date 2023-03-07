@@ -1,10 +1,9 @@
 import dotenv from "dotenv"
 import { FastifyListenOptions } from "fastify"
+import { Application } from "./Application"
 import { createServer } from "./server"
 
 dotenv.config()
-
-const server = createServer()
 
 const PORT = +process.env.PORT!
 
@@ -14,9 +13,9 @@ const opts: FastifyListenOptions = {
 
 async function main() {
   try {
+    const server = await createServer(new Application())
     const address = await server.listen(opts)
-    server.log.info(`Server listening at ${address}`)
-    server.db.connect()
+    console.log(`Server listening at ${address}`)
   } catch (e) {
     console.log(e)
   }

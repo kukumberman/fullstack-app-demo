@@ -1,9 +1,16 @@
-export class JsonError {
-  constructor(public code: number, public name: string, public message: string) {}
+export enum ErrorType {
+  EmptyFields,
+  SignUpInvalidEmail,
+  SignUpInvalidPassword,
+  SignUpUserAlreadyExists,
+  SignInNoUserWithGivenEmail,
+  SignInWrongPassword,
 }
 
-export class UnauthorizedError extends JsonError {
-  constructor() {
-    super(401, "Unauthorized", "Unauthorized")
+export class CustomError {
+  public readonly error: string
+
+  constructor(public readonly statusCode: number, type: ErrorType) {
+    this.error = ErrorType[type]
   }
 }

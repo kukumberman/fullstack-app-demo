@@ -32,15 +32,27 @@ export type LoginFields = {
   password: string
 }
 
+export type AppFields = {
+  clickCounter: number
+  experienceAmount: number
+}
+
 export interface UserSchema {
   id: ObjectId
-  nickname: string
   createdAt: string
   updatedAt: string
   login: LoginFields
   signIn: SignInMethods
+  app: AppFields
 }
 
 export type UserTokenPayload = {
   id: string
+}
+
+export type JwtToken = string
+
+export type JwtTokenPair = {
+  accessToken: JwtToken
+  refreshToken: JwtToken
 }

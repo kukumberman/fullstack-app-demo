@@ -1,31 +1,38 @@
+import Fastify, { FastifyInstance } from "fastify"
 import fastifyCookie from "@fastify/cookie"
 import fastifyJwt from "@fastify/jwt"
 
 import { routes } from "./userController"
 import { registerOAuth2 } from "./oauth"
-import { UserDatabase } from "./db/lowdb"
 import { UserIdentifier } from "./utils"
 import { UserModel } from "./db/UserModel"
-import Fastify, { FastifyInstance } from "fastify"
+import { Application } from "./Application"
 
-export function createServer(): FastifyInstance {
-  const app: FastifyInstance = Fastify({ logger: true })
+declare module "fastify" {
+  interface FastifyInstance {
+    app: Application
+  }
+}
 
-  const db = new UserDatabase("users")
-  app.decorate("db", db)
+export async function createServer(app: Application): Promise<FastifyInstance> {
+  const fastify: FastifyInstance = Fastify({ logger: { level: "error" } })
 
-  app.register(fastifyCookie, {
+  await app.initialize()
+
+  fastify.decorate("app", app)
+
+  fastify.register(fastifyCookie, {
     secret: process.env.COOKIE_SECRET!,
   })
 
-  app.register(fastifyJwt, {
+  fastify.register(fastifyJwt, {
     secret: process.env.JWT_SECRET!,
   })
 
-  app.get("/", async (request, reply) => {
+  fastify.get("/", async (request, reply) => {
     try {
-      const user: UserModel | null = await UserIdentifier.getUserFromCookie(request)
-      if (user != null) {
+      const user: UserModel | undefined = await UserIdentifier.getUserFromCookie(request)
+      if (user !== undefined) {
         return user
       }
     } catch (error) {
@@ -35,13 +42,13 @@ export function createServer(): FastifyInstance {
     return { message: "Hello, World!" }
   })
 
-  app.get("/api", (request, reply) => {
+  fastify.get("/api", (request, reply) => {
     return { message: "api" }
   })
 
-  app.register(routes, { prefix: "/api/user" })
+  routes(fastify)
 
-  registerOAuth2(app)
+  registerOAuth2(fastify)
 
-  return app
+  return fastify
 }

@@ -7,17 +7,15 @@ import oauthPlugin, {
   Token,
 } from "@fastify/oauth2"
 import { UserTokenPayload } from "./types"
-import { UserDatabase } from "./db/lowdb"
-import { ExternalLogin, generateTimestampString, UserIdentifier } from "./utils"
+import { generateTimestampString, UserIdentifier } from "./utils"
 import { UserModel } from "./db/UserModel"
+import { UserService } from "./UserService"
 
 const GET_OAUTH2 = "customOAuth2"
-const GET_DATABASE = "db"
 
 declare module "fastify" {
   interface FastifyInstance {
     [GET_OAUTH2]: Map<string, OAuth2Handler>
-    [GET_DATABASE]: UserDatabase
   }
 }
 
@@ -32,7 +30,7 @@ abstract class OAuth2Handler {
 
   abstract getProviderConfiguration(): ProviderConfiguration
 
-  abstract createOrUpdateUser(db: UserDatabase, fields: any): Promise<string>
+  abstract createOrUpdateUser(userService: UserService, fields: any): Promise<string>
 
   abstract assign(user: UserModel, fields: any): void
 
@@ -97,9 +95,9 @@ class DiscordOAuth2Handler extends OAuth2Handler {
     return oauthPlugin.DISCORD_CONFIGURATION
   }
 
-  async createOrUpdateUser(db: UserDatabase, fields: any): Promise<string> {
+  async createOrUpdateUser(userService: UserService, fields: any): Promise<string> {
     const now = generateTimestampString()
-    const candidate = await db.findUserByDiscordId(fields.id)
+    const candidate = await userService.findOneByDiscordId(fields.id)
     if (candidate != null) {
       const discord = candidate.data.signIn.discord!
       discord.id = fields.id
@@ -108,10 +106,10 @@ class DiscordOAuth2Handler extends OAuth2Handler {
       discord.discriminator = fields.discriminator
       discord.updatedAt = now
       candidate.data.updatedAt = now
-      await db.save()
+      await userService.save(candidate)
       return candidate.data.id
     } else {
-      const newUser = UserModel.Empty()
+      const newUser = UserModel.New()
       newUser.data.signIn.discord = {
         id: fields.id,
         username: fields.username,
@@ -120,7 +118,7 @@ class DiscordOAuth2Handler extends OAuth2Handler {
         createdAt: now,
         updatedAt: now,
       }
-      await db.addUser(newUser)
+      await userService.save(newUser)
       return newUser.data.id
     }
   }
@@ -154,9 +152,9 @@ class GoogleOAuth2Handler extends OAuth2Handler {
     return oauthPlugin.GOOGLE_CONFIGURATION
   }
 
-  async createOrUpdateUser(db: UserDatabase, fields: any): Promise<string> {
+  async createOrUpdateUser(userService: UserService, fields: any): Promise<string> {
     const now = generateTimestampString()
-    const candidate = await db.findUserByGoogleId(fields.id)
+    const candidate = await userService.findOneByGoogleId(fields.id)
     if (candidate != null) {
       const google = candidate.data.signIn.google!
       google.id = fields.id
@@ -165,10 +163,10 @@ class GoogleOAuth2Handler extends OAuth2Handler {
       google.picture = fields.picture
       google.updatedAt = now
       candidate.data.updatedAt = now
-      await db.save()
+      await userService.save(candidate)
       return candidate.data.id
     } else {
-      const newUser = UserModel.Empty()
+      const newUser = UserModel.New()
       newUser.data.signIn.google = {
         id: fields.id,
         email: fields.email,
@@ -177,7 +175,7 @@ class GoogleOAuth2Handler extends OAuth2Handler {
         createdAt: now,
         updatedAt: now,
       }
-      await db.addUser(newUser)
+      await userService.save(newUser)
       return newUser.data.id
     }
   }
@@ -211,8 +209,6 @@ export function registerOAuth2(instance: FastifyInstance) {
     return keys
   })
 
-  const externalLogin = new ExternalLogin(10)
-
   interface IExternalLoginRequest {
     Querystring: {
       guid: string | undefined
@@ -228,6 +224,7 @@ export function registerOAuth2(instance: FastifyInstance) {
       }
     }
 
+    const externalLogin = request.server.app.externalLogin
     const token = externalLogin.popToken(guid)
     externalLogin.tryRemoveExpiredEntries()
 
@@ -290,14 +287,14 @@ export function registerOAuth2(instance: FastifyInstance) {
     const state: string = request.query.state
     const [stateId, stateValue] = decodeURIComponent(state).split(":")
 
-    const db = request.server[GET_DATABASE]
+    const userService: UserService = request.server.app.userService
 
     //todo: also handle token validation before callback method?
     if (stateId === "token") {
       try {
         const payload = request.server.jwt.verify(stateValue) as UserTokenPayload
         const id = payload.id
-        const user = await db.findUserById(id)
+        const user = await userService.findOneById(id)
         if (user == null) {
           return {
             message: "how did you get this token?",
@@ -311,7 +308,7 @@ export function registerOAuth2(instance: FastifyInstance) {
         }
 
         handler.assign(user, data)
-        await db.save()
+        await userService.save(user)
 
         return {
           message: `${methodName} assigned successfully`,
@@ -334,7 +331,7 @@ export function registerOAuth2(instance: FastifyInstance) {
       }
     }
 
-    const id = await handler.createOrUpdateUser(db, data)
+    const id = await handler.createOrUpdateUser(userService, data)
     const accessToken = request.server.jwt.sign({ id })
     //todo: set "expire_date" (for cookie and accessToken)
     reply.setCookie(UserIdentifier.COOKIE_NAME, accessToken, { path: "/" })
@@ -343,6 +340,7 @@ export function registerOAuth2(instance: FastifyInstance) {
     const notEmptyState = state.length > 0 && state != "none"
     const isValidGuid = stateId === "guid" && stateValue.length > 0
     if (notEmptyState && isValidGuid) {
+      const externalLogin = request.server.app.externalLogin
       externalLogin.saveTokenInMemory(stateValue, accessToken)
     }
   })

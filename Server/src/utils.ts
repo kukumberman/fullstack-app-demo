@@ -74,13 +74,13 @@ export class UserIdentifier {
     const cookieToken: string | undefined = request.cookies[UserIdentifier.COOKIE_NAME]
 
     if (cookieToken == undefined) {
-      return null
+      return undefined
     }
 
     const instance = request.server
     const payload = instance.jwt.verify(cookieToken) as UserTokenPayload
     const id = payload.id
-    const user = await instance.db.findUserById(id)
+    const user = await instance.app.userService.findOneById(id)
     return user
   }
 }
