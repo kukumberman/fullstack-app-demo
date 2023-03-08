@@ -10,7 +10,6 @@ import { UserTokenPayload } from "./types"
 import { generateTimestampString } from "./utils"
 import { UserModel } from "./db/UserModel"
 import { UserService } from "./UserService"
-import { CookieAccessTokenName, CookieRefreshTokenName } from "./constants"
 
 const GET_OAUTH2 = "customOAuth2"
 
@@ -286,6 +285,7 @@ export function registerOAuth2(instance: FastifyInstance) {
 
     const userService: UserService = request.server.app.userService
     const jwtService = request.server.app.jwtService
+    const cookieService = request.server.app.cookieService
 
     //todo: also handle token validation before callback method?
     if (stateId === "token") {
@@ -336,9 +336,7 @@ export function registerOAuth2(instance: FastifyInstance) {
     user.refreshToken = tokenPair.refreshToken
     await userService.save(user)
 
-    //todo: set "expire_date" (for cookie and accessToken)
-    reply.setCookie(CookieAccessTokenName, tokenPair.accessToken, { path: "/", httpOnly: false })
-    reply.setCookie(CookieRefreshTokenName, tokenPair.refreshToken, { path: "/", httpOnly: true })
+    cookieService.setTokens(reply, tokenPair)
     reply.redirect("/")
 
     const notEmptyState = state.length > 0 && state != "none"

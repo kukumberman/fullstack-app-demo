@@ -65,9 +65,7 @@ export class UserServiceImpl extends UserService {
       throw new CustomError(400, ErrorType.SignUpInvalidPassword)
     }
 
-    const user: UserSchema | undefined = this.db.data.find(
-      (entry) => entry.signIn.standard?.email === email
-    )
+    const user: UserModel | undefined = await this.findOneByEmail(email)
     if (user !== undefined) {
       throw new CustomError(400, ErrorType.SignUpUserAlreadyExists)
     }
@@ -83,8 +81,16 @@ export class UserServiceImpl extends UserService {
     return newUser
   }
 
-  signIn(email: string, password: string): Promise<UserModel> {
-    throw new Error("Method not implemented.")
+  async signIn(email: string, password: string): Promise<UserModel> {
+    const user: UserModel | undefined = await this.findOneByEmail(email)
+    if (user === undefined) {
+      throw new CustomError(400, ErrorType.SignInNoUserWithGivenEmail)
+    }
+    //todo: compare hashed password
+    if (user.data.signIn.standard?.password !== password) {
+      throw new CustomError(400, ErrorType.SignInWrongPassword)
+    }
+    return user
   }
 
   async save(user: UserModel): Promise<void> {
