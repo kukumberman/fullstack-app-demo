@@ -1,6 +1,7 @@
 import dotenv from "dotenv"
 import { FastifyListenOptions } from "fastify"
 import { Application } from "./Application"
+import { ApplicationEnvironment } from "./enums"
 import { createServer } from "./server"
 
 dotenv.config()
@@ -13,7 +14,7 @@ const opts: FastifyListenOptions = {
 
 async function main() {
   try {
-    const server = await createServer(new Application())
+    const server = await createServer(new Application(ApplicationEnvironment.Development))
     const address = await server.listen(opts)
     console.log(`Server listening at ${address}`)
   } catch (e) {

@@ -99,7 +99,7 @@ class DiscordOAuth2Handler extends OAuth2Handler {
     const now = generateTimestampString()
     const candidate = await userService.findOneByDiscordId(fields.id)
     if (candidate != null) {
-      const discord = candidate.data.signIn.discord!
+      const discord = candidate.data.signIn.platforms.discord!
       discord.id = fields.id
       discord.username = fields.username
       discord.avatar = fields.avatar
@@ -110,7 +110,7 @@ class DiscordOAuth2Handler extends OAuth2Handler {
       return candidate.data.id
     } else {
       const newUser = UserModel.New()
-      newUser.data.signIn.discord = {
+      newUser.data.signIn.platforms.discord = {
         id: fields.id,
         username: fields.username,
         avatar: fields.avatar,
@@ -125,7 +125,7 @@ class DiscordOAuth2Handler extends OAuth2Handler {
 
   assign(user: UserModel, fields: any) {
     const now = generateTimestampString()
-    user.data.signIn.discord = {
+    user.data.signIn.platforms.discord = {
       id: fields.id,
       username: fields.username,
       avatar: fields.avatar,
@@ -156,7 +156,7 @@ class GoogleOAuth2Handler extends OAuth2Handler {
     const now = generateTimestampString()
     const candidate = await userService.findOneByGoogleId(fields.id)
     if (candidate != null) {
-      const google = candidate.data.signIn.google!
+      const google = candidate.data.signIn.platforms.google!
       google.id = fields.id
       google.email = fields.email
       google.name = fields.name
@@ -167,7 +167,7 @@ class GoogleOAuth2Handler extends OAuth2Handler {
       return candidate.data.id
     } else {
       const newUser = UserModel.New()
-      newUser.data.signIn.google = {
+      newUser.data.signIn.platforms.google = {
         id: fields.id,
         email: fields.email,
         name: fields.name,
@@ -182,7 +182,7 @@ class GoogleOAuth2Handler extends OAuth2Handler {
 
   assign(user: UserModel, fields: any): void {
     const now = generateTimestampString()
-    user.data.signIn.google = {
+    user.data.signIn.platforms.google = {
       id: fields.id,
       email: fields.email,
       name: fields.name,
@@ -239,21 +239,21 @@ export function registerOAuth2(instance: FastifyInstance) {
 
   interface ILoginRequest {
     Params: {
-      method: string
+      platform: string
     }
   }
 
-  instance.get<ILoginRequest>("/login/:method", (request, reply) => {
-    const methodName = request.params.method
+  instance.get<ILoginRequest>("/login/:platform", (request, reply) => {
+    const platformName = request.params.platform
     const storage = request.server[GET_OAUTH2]
-    if (!storage.has(methodName)) {
+    if (!storage.has(platformName)) {
       //todo: error
       return {
-        message: "method not found",
+        message: "platform not found",
       }
     }
 
-    const handler: OAuth2Handler = storage.get(methodName)!
+    const handler: OAuth2Handler = storage.get(platformName)!
     const plugin: OAuth2Namespace = handler.getPlugin(instance)
     const url: string = plugin.generateAuthorizationUri(request)
     return { redirect: url }
@@ -264,21 +264,21 @@ export function registerOAuth2(instance: FastifyInstance) {
       state: string
     }
     Params: {
-      method: string
+      platform: string
     }
   }
 
-  instance.get<ICallbackRequest>("/login/:method/callback", async (request, reply) => {
-    const methodName = request.params.method
+  instance.get<ICallbackRequest>("/login/:platform/callback", async (request, reply) => {
+    const platformName = request.params.platform
     const storage = request.server[GET_OAUTH2]
-    if (!storage.has(methodName)) {
+    if (!storage.has(platformName)) {
       //todo: error
       return {
         message: "method not found",
       }
     }
 
-    const handler: OAuth2Handler = storage.get(methodName)!
+    const handler: OAuth2Handler = storage.get(platformName)!
     const plugin: OAuth2Namespace = handler.getPlugin(instance)
     const token: Token = (await plugin.getAccessTokenFromAuthorizationCodeFlow(request)).token
 
@@ -301,9 +301,9 @@ export function registerOAuth2(instance: FastifyInstance) {
           }
         }
 
-        if (user.hasConnectedMethod(methodName)) {
+        if (user.hasConnectedPlatform(platformName)) {
           return {
-            message: `${methodName} is already connected`,
+            message: `${platformName} is already connected`,
           }
         }
 
@@ -311,7 +311,7 @@ export function registerOAuth2(instance: FastifyInstance) {
         await userService.save(user)
 
         return {
-          message: `${methodName} assigned successfully`,
+          message: `${platformName} assigned successfully`,
         }
       } catch (error) {
         // someone can manually send request with fake token, so jwt error is handled here

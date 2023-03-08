@@ -4,7 +4,7 @@ export type DiscordId = string
 
 export type GoogleId = string
 
-export type SignInMethods = {
+export type SignInPlatforms = {
   discord: DiscordSignInFields | null
   google: GoogleSignInFields | null
 }
@@ -27,12 +27,19 @@ export type GoogleSignInFields = {
   updatedAt: string
 }
 
-export type LoginFields = {
+export type StandardSignInFields = {
   email: string
   password: string
 }
 
+export type SignIn = {
+  refreshToken: JwtToken
+  standard: StandardSignInFields | null
+  platforms: SignInPlatforms
+}
+
 export type AppFields = {
+  nickname: string
   clickCounter: number
   experienceAmount: number
 }
@@ -41,8 +48,7 @@ export interface UserSchema {
   id: ObjectId
   createdAt: string
   updatedAt: string
-  login: LoginFields
-  signIn: SignInMethods
+  signIn: SignIn
   app: AppFields
 }
 

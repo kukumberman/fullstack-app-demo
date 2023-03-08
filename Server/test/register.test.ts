@@ -3,13 +3,14 @@ import dotenv from "dotenv"
 import { FastifyInstance } from "fastify"
 import { CustomError, ErrorType } from "../src/errors"
 import { Application } from "../src/Application"
+import { ApplicationEnvironment } from "../src/enums"
 
 dotenv.config()
 
 let fastify: FastifyInstance
 
 beforeAll(async () => {
-  fastify = await createServer(new Application())
+  fastify = await createServer(new Application(ApplicationEnvironment.Test))
 })
 
 afterAll(async () => {

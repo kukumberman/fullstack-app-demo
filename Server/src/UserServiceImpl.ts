@@ -2,6 +2,7 @@ import path from "path"
 import { Application } from "./Application"
 import { UserDatabase } from "./db/UserDatabase"
 import { UserModel } from "./db/UserModel"
+import { ApplicationEnvironment } from "./enums"
 import { CustomError, ErrorType } from "./errors"
 import { UserSchema } from "./types"
 import { UserService } from "./UserService"
@@ -11,7 +12,8 @@ export class UserServiceImpl extends UserService {
 
   constructor(public readonly app: Application) {
     super()
-    this.db = new UserDatabase(path.resolve("db", "users.json"))
+    const dbName = "users." + ApplicationEnvironment[app.environmentType].toLowerCase() + ".json"
+    this.db = new UserDatabase(path.resolve("db", dbName))
   }
 
   async initialize(): Promise<void> {
@@ -29,7 +31,7 @@ export class UserServiceImpl extends UserService {
 
   async findOneByEmail(email: string): Promise<UserModel | undefined> {
     await this.db.read()
-    const result = this.db.data.find((entry) => entry.login.email === email)
+    const result = this.db.data.find((entry) => entry.signIn.standard?.email === email)
     if (result === undefined) {
       return undefined
     }
@@ -38,7 +40,7 @@ export class UserServiceImpl extends UserService {
 
   async findOneByDiscordId(id: string): Promise<UserModel | undefined> {
     await this.db.read()
-    const result = this.db.data.find((entry) => entry.signIn.discord?.id === id)
+    const result = this.db.data.find((entry) => entry.signIn.platforms.discord?.id === id)
     if (result === undefined) {
       return undefined
     }
@@ -47,7 +49,7 @@ export class UserServiceImpl extends UserService {
 
   async findOneByGoogleId(id: string): Promise<UserModel | undefined> {
     await this.db.read()
-    const result = this.db.data.find((entry) => entry.signIn.google?.id === id)
+    const result = this.db.data.find((entry) => entry.signIn.platforms.google?.id === id)
     if (result === undefined) {
       return undefined
     }
@@ -63,14 +65,18 @@ export class UserServiceImpl extends UserService {
       throw new CustomError(400, ErrorType.SignUpInvalidPassword)
     }
 
-    const user: UserSchema | undefined = this.db.data.find((entry) => entry.login.email === email)
+    const user: UserSchema | undefined = this.db.data.find(
+      (entry) => entry.signIn.standard?.email === email
+    )
     if (user !== undefined) {
       throw new CustomError(400, ErrorType.SignUpUserAlreadyExists)
     }
 
     const newUser = UserModel.New()
-    newUser.data.login.email = email
-    newUser.data.login.password = password
+    newUser.data.signIn.standard = {
+      email,
+      password,
+    }
 
     //todo: hash password
 

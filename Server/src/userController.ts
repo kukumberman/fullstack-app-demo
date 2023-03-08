@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginOptions } from "fastify"
+import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify"
 import { CustomError, ErrorType } from "./errors"
 
 type BodyParams = {
