@@ -1,15 +1,9 @@
 import { SignInPlatforms, UserSchema } from "../types"
-import { generateId, generateTimestampString } from "../utils"
+import { generateTemporaryNickname, generateTimestampString } from "../utils"
+import { generateId } from "../utils/id"
 
 export abstract class BaseModel<T> {
   constructor(public data: T) {}
-}
-
-function generateTemporaryNickname(dateStr: string): string {
-  const date = new Date(dateStr)
-  const prefix = "User"
-  const suffix = date.getMilliseconds().toString(16).padStart(4, "0")
-  return `${prefix}-${suffix}`
 }
 
 export class UserModel extends BaseModel<UserSchema> {
@@ -47,5 +41,13 @@ export class UserModel extends BaseModel<UserSchema> {
 
   hasConnectedPlatform(platform: string): boolean {
     return this.data.signIn.platforms[platform as keyof SignInPlatforms] != null
+  }
+
+  get refreshToken(): string {
+    return this.data.signIn.refreshToken
+  }
+
+  set refreshToken(value: string) {
+    this.data.signIn.refreshToken = value
   }
 }

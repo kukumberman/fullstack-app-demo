@@ -10,7 +10,7 @@ import { UserService } from "./UserService"
 export class UserServiceImpl extends UserService {
   private readonly db: UserDatabase
 
-  constructor(public readonly app: Application) {
+  constructor(private readonly app: Application) {
     super()
     const dbName = "users." + ApplicationEnvironment[app.environmentType].toLowerCase() + ".json"
     this.db = new UserDatabase(path.resolve("db", dbName))
@@ -79,8 +79,6 @@ export class UserServiceImpl extends UserService {
     }
 
     //todo: hash password
-
-    await this.save(newUser)
 
     return newUser
   }

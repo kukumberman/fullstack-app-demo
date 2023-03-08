@@ -1,14 +1,17 @@
 import { ApplicationEnvironment } from "./enums"
+import { JwtService } from "./JwtService"
 import { UserService } from "./UserService"
 import { UserServiceImpl } from "./UserServiceImpl"
-import { ExternalLogin } from "./utils"
+import { ExternalLogin } from "./utils/ExternalLogin"
 
 export class Application {
   public readonly userService: UserService
+  public readonly jwtService: JwtService
   public readonly externalLogin: ExternalLogin
 
   constructor(public readonly environmentType: ApplicationEnvironment) {
     this.userService = new UserServiceImpl(this)
+    this.jwtService = new JwtService(5 * 1000, 10 * 1000)
     this.externalLogin = new ExternalLogin(10)
   }
 

@@ -94,7 +94,10 @@ describe("register", () => {
 
     const data = response.json()
     expect(response.statusCode).toEqual(200)
-    expect(typeof data.id).toEqual("string")
+    expect(typeof data.accessToken).toEqual("string")
+    expect(typeof data.refreshToken).toEqual("string")
+    expect(data.accessToken.length).toBeGreaterThan(0)
+    expect(data.refreshToken.length).toBeGreaterThan(0)
   })
 
   it("fails to create user with existing email", async () => {
@@ -118,7 +121,10 @@ describe("register", () => {
 
     const dataSuccess = responseSuccess.json()
     expect(responseSuccess.statusCode).toEqual(200)
-    expect(typeof dataSuccess.id).toEqual("string")
+    expect(typeof dataSuccess.accessToken).toEqual("string")
+    expect(typeof dataSuccess.refreshToken).toEqual("string")
+    expect(dataSuccess.accessToken.length).toBeGreaterThan(0)
+    expect(dataSuccess.refreshToken.length).toBeGreaterThan(0)
 
     expect(responseFailed.statusCode).toEqual(400)
     const dataFailed = responseFailed.json() as CustomError

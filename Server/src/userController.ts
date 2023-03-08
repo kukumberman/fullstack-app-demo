@@ -2,8 +2,8 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify"
 import { CustomError, ErrorType } from "./errors"
 
 type BodyParams = {
-  email: string | undefined
-  password: string | undefined
+  email: any | undefined
+  password: any | undefined
 }
 
 function loginHandler(request: FastifyRequest<{ Body: BodyParams }>, reply: FastifyReply) {
@@ -14,22 +14,32 @@ async function registerHandler(request: FastifyRequest<{ Body: BodyParams }>, re
   const email = request.body.email
   const password = request.body.password
 
-  if (email === undefined || password === undefined) {
+  if (
+    email === undefined ||
+    typeof email !== "string" ||
+    password === undefined ||
+    typeof password !== "string"
+  ) {
     const error = new CustomError(400, ErrorType.EmptyFields)
     reply.code(error.statusCode)
     return error
   }
 
+  const userService = request.server.app.userService
+  const jwtService = request.server.app.jwtService
   try {
-    const user = await request.server.app.userService.signUp(email, password)
-    return {
-      id: user.data.id,
-    }
+    const user = await userService.signUp(email, password)
+    const tokenPayload = { id: user.data.id }
+    const tokenPair = jwtService.generatePair(tokenPayload)
+    user.refreshToken = tokenPair.refreshToken
+    await userService.save(user)
+    return tokenPair
   } catch (error: any) {
     if (error instanceof CustomError) {
       reply.code(error.statusCode)
       return error
     }
+    return error
   }
 }
 

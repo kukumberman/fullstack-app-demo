@@ -1,12 +1,12 @@
 import Fastify, { FastifyInstance } from "fastify"
 import fastifyCookie from "@fastify/cookie"
-import fastifyJwt from "@fastify/jwt"
 
 import { routes } from "./userController"
 import { registerOAuth2 } from "./oauth"
-import { UserIdentifier } from "./utils"
 import { UserModel } from "./db/UserModel"
 import { Application } from "./Application"
+import { CookieAccessTokenName, CookieRefreshTokenName } from "./constants"
+import { UserTokenPayload } from "./types"
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -25,18 +25,21 @@ export async function createServer(app: Application): Promise<FastifyInstance> {
     secret: process.env.COOKIE_SECRET!,
   })
 
-  fastify.register(fastifyJwt, {
-    secret: process.env.JWT_SECRET!,
-  })
-
+  // temporary solution (as frontend does not exist) to get info about current logged user at root page
   fastify.get("/", async (request, reply) => {
+    const jwtService = request.server.app.jwtService
+    const userService = request.server.app.userService
+    //todo: try to use refreshToken in accessToken is expired
     try {
-      const user: UserModel | undefined = await UserIdentifier.getUserFromCookie(request)
-      if (user !== undefined) {
-        return user
+      const cookieAccessToken: string | undefined = request.cookies[CookieAccessTokenName]
+      if (cookieAccessToken !== undefined) {
+        const payload = jwtService.verify(cookieAccessToken) as UserTokenPayload
+        const user: UserModel | undefined = await userService.findOneById(payload.id)
+        if (user !== undefined) {
+          return user
+        }
       }
     } catch (error) {
-      console.log(error)
       return error
     }
     return { message: "Hello, World!" }

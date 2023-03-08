@@ -7,9 +7,10 @@ import oauthPlugin, {
   Token,
 } from "@fastify/oauth2"
 import { UserTokenPayload } from "./types"
-import { generateTimestampString, UserIdentifier } from "./utils"
+import { generateTimestampString } from "./utils"
 import { UserModel } from "./db/UserModel"
 import { UserService } from "./UserService"
+import { CookieAccessTokenName, CookieRefreshTokenName } from "./constants"
 
 const GET_OAUTH2 = "customOAuth2"
 
@@ -30,7 +31,7 @@ abstract class OAuth2Handler {
 
   abstract getProviderConfiguration(): ProviderConfiguration
 
-  abstract createOrUpdateUser(userService: UserService, fields: any): Promise<string>
+  abstract createOrUpdateUser(userService: UserService, fields: any): Promise<UserModel>
 
   abstract assign(user: UserModel, fields: any): void
 
@@ -95,7 +96,7 @@ class DiscordOAuth2Handler extends OAuth2Handler {
     return oauthPlugin.DISCORD_CONFIGURATION
   }
 
-  async createOrUpdateUser(userService: UserService, fields: any): Promise<string> {
+  async createOrUpdateUser(userService: UserService, fields: any): Promise<UserModel> {
     const now = generateTimestampString()
     const candidate = await userService.findOneByDiscordId(fields.id)
     if (candidate != null) {
@@ -106,8 +107,7 @@ class DiscordOAuth2Handler extends OAuth2Handler {
       discord.discriminator = fields.discriminator
       discord.updatedAt = now
       candidate.data.updatedAt = now
-      await userService.save(candidate)
-      return candidate.data.id
+      return candidate
     } else {
       const newUser = UserModel.New()
       newUser.data.signIn.platforms.discord = {
@@ -118,8 +118,7 @@ class DiscordOAuth2Handler extends OAuth2Handler {
         createdAt: now,
         updatedAt: now,
       }
-      await userService.save(newUser)
-      return newUser.data.id
+      return newUser
     }
   }
 
@@ -152,7 +151,7 @@ class GoogleOAuth2Handler extends OAuth2Handler {
     return oauthPlugin.GOOGLE_CONFIGURATION
   }
 
-  async createOrUpdateUser(userService: UserService, fields: any): Promise<string> {
+  async createOrUpdateUser(userService: UserService, fields: any): Promise<UserModel> {
     const now = generateTimestampString()
     const candidate = await userService.findOneByGoogleId(fields.id)
     if (candidate != null) {
@@ -163,8 +162,7 @@ class GoogleOAuth2Handler extends OAuth2Handler {
       google.picture = fields.picture
       google.updatedAt = now
       candidate.data.updatedAt = now
-      await userService.save(candidate)
-      return candidate.data.id
+      return candidate
     } else {
       const newUser = UserModel.New()
       newUser.data.signIn.platforms.google = {
@@ -175,8 +173,7 @@ class GoogleOAuth2Handler extends OAuth2Handler {
         createdAt: now,
         updatedAt: now,
       }
-      await userService.save(newUser)
-      return newUser.data.id
+      return newUser
     }
   }
 
@@ -288,11 +285,12 @@ export function registerOAuth2(instance: FastifyInstance) {
     const [stateId, stateValue] = decodeURIComponent(state).split(":")
 
     const userService: UserService = request.server.app.userService
+    const jwtService = request.server.app.jwtService
 
     //todo: also handle token validation before callback method?
     if (stateId === "token") {
       try {
-        const payload = request.server.jwt.verify(stateValue) as UserTokenPayload
+        const payload = jwtService.verify(stateValue) as UserTokenPayload
         const id = payload.id
         const user = await userService.findOneById(id)
         if (user == null) {
@@ -331,17 +329,24 @@ export function registerOAuth2(instance: FastifyInstance) {
       }
     }
 
-    const id = await handler.createOrUpdateUser(userService, data)
-    const accessToken = request.server.jwt.sign({ id })
+    const user = await handler.createOrUpdateUser(userService, data)
+
+    const tokenPayload = { id: user.data.id }
+    const tokenPair = jwtService.generatePair(tokenPayload)
+    user.refreshToken = tokenPair.refreshToken
+    await userService.save(user)
+
     //todo: set "expire_date" (for cookie and accessToken)
-    reply.setCookie(UserIdentifier.COOKIE_NAME, accessToken, { path: "/" })
+    reply.setCookie(CookieAccessTokenName, tokenPair.accessToken, { path: "/", httpOnly: false })
+    reply.setCookie(CookieRefreshTokenName, tokenPair.refreshToken, { path: "/", httpOnly: true })
     reply.redirect("/")
 
     const notEmptyState = state.length > 0 && state != "none"
     const isValidGuid = stateId === "guid" && stateValue.length > 0
     if (notEmptyState && isValidGuid) {
       const externalLogin = request.server.app.externalLogin
-      externalLogin.saveTokenInMemory(stateValue, accessToken)
+      //todo: probably should be saved both tokens
+      externalLogin.saveTokenInMemory(stateValue, tokenPair.accessToken)
     }
   })
 }
