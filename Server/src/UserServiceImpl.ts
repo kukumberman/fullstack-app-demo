@@ -1,19 +1,16 @@
-import path from "path"
 import { Application } from "./Application"
-import { UserDatabase } from "./db/UserDatabase"
+import { SimpleDatabase } from "./db/SimpleDatabase"
 import { UserModel } from "./db/UserModel"
-import { ApplicationEnvironment } from "./enums"
 import { CustomError, ErrorType } from "./errors"
 import { UserSchema } from "./types"
 import { UserService } from "./UserService"
 
 export class UserServiceImpl extends UserService {
-  private readonly db: UserDatabase
+  private readonly db: SimpleDatabase<UserSchema>
 
   constructor(private readonly app: Application) {
     super()
-    const dbName = "users." + ApplicationEnvironment[app.environmentType].toLowerCase() + ".json"
-    this.db = new UserDatabase(path.resolve("db", dbName))
+    this.db = new SimpleDatabase("users", app.environmentType)
   }
 
   async initialize(): Promise<void> {

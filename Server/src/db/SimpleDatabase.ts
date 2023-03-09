@@ -1,11 +1,21 @@
 import fs from "fs"
 import path from "path"
+import { ApplicationEnvironment } from "../enums"
+import { AsyncAdapter, MemoryAsyncAdapter, JsonFileAsyncAdapter } from "./Adapter"
 
 export class SimpleDatabase<T> {
+  private readonly pathToFile: string
+  private readonly adapter: AsyncAdapter<T[]>
   public data: T[]
 
-  constructor(private readonly pathToFile: string) {
+  constructor(name: string, environmentType: ApplicationEnvironment) {
+    const suffix = ApplicationEnvironment[environmentType].toLowerCase()
+    this.pathToFile = path.resolve("db", `${name}.${suffix}.json`)
     this.data = []
+    this.adapter =
+      environmentType == ApplicationEnvironment.Test
+        ? new MemoryAsyncAdapter<T[]>(this.data)
+        : new JsonFileAsyncAdapter<T[]>(this.pathToFile)
   }
 
   async initialize(): Promise<void> {
@@ -20,12 +30,10 @@ export class SimpleDatabase<T> {
   }
 
   async read(): Promise<void> {
-    const text = await fs.promises.readFile(this.pathToFile)
-    this.data = JSON.parse(text.toString())
+    this.data = await this.adapter.read()
   }
 
   write(): Promise<void> {
-    const text = JSON.stringify(this.data, null, 2)
-    return fs.promises.writeFile(this.pathToFile, text)
+    return this.adapter.write(this.data)
   }
 }
