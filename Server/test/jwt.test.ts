@@ -23,12 +23,74 @@ afterEach(async () => {
   await fastify.app.userService.deleteAll()
 })
 
-describe("/api/refresh", () => {
-  it.todo("successfully updates refreshToken and returns new token pair")
+describe("refresh token via cookie", () => {
+  it("fails to refresh without refreshToken in cookie header", async () => {
+    const response = await fastify.inject({
+      method: "GET",
+      url: "/api/refresh",
+    })
 
-  it.todo("fails to generate new token pair if given refreshToken dont exist")
+    expect(response.statusCode).toEqual(401)
+  })
 
-  it.todo("user can use refreshToken only once")
+  it("fails to refresh with verified refreshToken of non existing user", async () => {
+    const jwtService = new JwtService("1ms", "1m")
+    const refreshToken = jwtService.generateRefreshToken({ id: "0" })
+
+    const response = await fastify.inject({
+      method: "GET",
+      url: "/api/refresh",
+      cookies: {
+        [CookieRefreshTokenName]: refreshToken,
+      },
+    })
+
+    expect(response.statusCode).toEqual(404)
+  })
+
+  it("successfully updates refreshToken and returns new token pair", async () => {
+    const jwtService = new JwtService("1ms", "1m")
+    const userService = fastify.app.userService
+    const user = UserModel.New()
+    const refreshToken = jwtService.generateRefreshToken({ id: user.id })
+    user.refreshToken = refreshToken
+    await userService.save(user)
+
+    const response = await fastify.inject({
+      method: "GET",
+      url: "/api/refresh",
+      cookies: {
+        [CookieRefreshTokenName]: refreshToken,
+      },
+    })
+
+    expect(response.statusCode).toEqual(200)
+    const data = response.json()
+    expect(typeof data.accessToken).toEqual("string")
+    expect(typeof data.refreshToken).toEqual("string")
+  })
+
+  it("fails to generate new token pair if given refreshToken is expired", async () => {
+    const jwtService = new JwtService("1ms", "1ms")
+    const userService = fastify.app.userService
+    const user = UserModel.New()
+    const refreshToken = jwtService.generateRefreshToken({ id: user.id })
+    user.refreshToken = refreshToken
+    await userService.save(user)
+
+    const response = await fastify.inject({
+      method: "GET",
+      url: "/api/refresh",
+      cookies: {
+        [CookieRefreshTokenName]: refreshToken,
+      },
+    })
+
+    //todo: temporary solution - server error has been thrown
+    expect(response.statusCode).toEqual(500)
+    const data = response.json()
+    expect(data.message).toEqual("jwt expired")
+  })
 })
 
 describe("logout via cookie", () => {

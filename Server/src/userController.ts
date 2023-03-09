@@ -119,9 +119,48 @@ async function logoutHandler(request: FastifyRequest, reply: FastifyReply) {
   }
 }
 
+async function refreshTokenHandler(request: FastifyRequest, reply: FastifyReply) {
+  const refreshToken: string | undefined = request.cookies[CookieRefreshTokenName]
+  if (refreshToken === undefined) {
+    reply.code(401)
+    return {
+      ok: false,
+    }
+  }
+
+  const userService = request.server.app.userService
+  const jwtService = request.server.app.jwtService
+  const cookieService = request.server.app.cookieService
+
+  const userPayload = jwtService.verify(refreshToken) as UserTokenPayload
+  const user: UserModel | undefined = await userService.findOneById(userPayload.id)
+  if (user === undefined) {
+    reply.code(404)
+    return {
+      ok: false,
+    }
+  }
+
+  //todo: not sure about this
+  if (user.refreshToken !== refreshToken) {
+    reply.code(404)
+    return {
+      ok: false,
+    }
+  }
+
+  const tokenPair = jwtService.generatePair({ id: user.id })
+  cookieService.setTokens(reply, tokenPair)
+  user.refreshToken = tokenPair.refreshToken
+  await userService.save(user)
+
+  return tokenPair
+}
+
 export function routes(fastify: FastifyInstance) {
   fastify.post("/api/login", loginHandler)
   fastify.post("/api/register", registerHandler)
   fastify.get("/api/users", { preHandler: [verifyAccessTokenFromHeader] }, getAllUsersHandler)
   fastify.get("/api/logout", logoutHandler)
+  fastify.get("/api/refresh", refreshTokenHandler)
 }
