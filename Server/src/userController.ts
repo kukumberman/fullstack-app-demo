@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify"
-import { CookieService } from "./CookieService"
 import { CustomError, ErrorType } from "./errors"
+import { verifyAccessTokenFromHeader, verifyAccessTokenFromCookie } from "./middleware"
 
 type BodyParams = {
   email: any | undefined
@@ -79,7 +79,15 @@ async function registerHandler(request: FastifyRequest<{ Body: BodyParams }>, re
   }
 }
 
+async function getAllUsersHandler(request: FastifyRequest, reply: FastifyReply) {
+  //todo: only public (non sensitive) data per each user
+  const userService = request.server.app.userService
+  const users = await userService.getAll()
+  return users
+}
+
 export function routes(fastify: FastifyInstance) {
   fastify.post("/api/login", loginHandler)
   fastify.post("/api/register", registerHandler)
+  fastify.get("/api/users", { preHandler: [verifyAccessTokenFromHeader] }, getAllUsersHandler)
 }
