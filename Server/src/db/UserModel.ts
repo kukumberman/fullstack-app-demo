@@ -1,4 +1,4 @@
-import { SignInPlatforms, UserSchema } from "../types"
+import { ObjectId, SignInPlatforms, UserSchema } from "../types"
 import { generateTemporaryNickname, generateTimestampString } from "../utils"
 import { generateId } from "../utils/id"
 
@@ -31,6 +31,10 @@ export class UserModel extends BaseModel<UserSchema> {
     })
   }
 
+  get id(): ObjectId {
+    return this.data.id
+  }
+
   discordNickname(): string {
     const discord = this.data.signIn.platforms.discord
     if (discord === null) {
@@ -41,6 +45,10 @@ export class UserModel extends BaseModel<UserSchema> {
 
   hasConnectedPlatform(platform: string): boolean {
     return this.data.signIn.platforms[platform as keyof SignInPlatforms] != null
+  }
+
+  logOut() {
+    this.refreshToken = ""
   }
 
   get refreshToken(): string {

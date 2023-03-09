@@ -1,6 +1,9 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify"
+import { CookieRefreshTokenName } from "./constants"
+import { UserModel } from "./db/UserModel"
 import { CustomError, ErrorType } from "./errors"
 import { verifyAccessTokenFromHeader, verifyAccessTokenFromCookie } from "./middleware"
+import { UserTokenPayload } from "./types"
 
 type BodyParams = {
   email: any | undefined
@@ -86,8 +89,39 @@ async function getAllUsersHandler(request: FastifyRequest, reply: FastifyReply) 
   return users
 }
 
+async function logoutHandler(request: FastifyRequest, reply: FastifyReply) {
+  const refreshToken: string | undefined = request.cookies[CookieRefreshTokenName]
+  if (refreshToken === undefined) {
+    reply.code(401)
+    return {
+      ok: false,
+    }
+  }
+
+  reply.clearCookie(CookieRefreshTokenName)
+  const userService = request.server.app.userService
+  const jwtService = request.server.app.jwtService
+
+  const userPayload = jwtService.verify(refreshToken) as UserTokenPayload
+  const user: UserModel | undefined = await userService.findOneById(userPayload.id)
+  if (user === undefined) {
+    reply.code(404)
+    return {
+      ok: false,
+    }
+  }
+
+  user.logOut()
+  await userService.save(user)
+
+  return {
+    ok: true,
+  }
+}
+
 export function routes(fastify: FastifyInstance) {
   fastify.post("/api/login", loginHandler)
   fastify.post("/api/register", registerHandler)
   fastify.get("/api/users", { preHandler: [verifyAccessTokenFromHeader] }, getAllUsersHandler)
+  fastify.get("/api/logout", logoutHandler)
 }
