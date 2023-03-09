@@ -1,5 +1,5 @@
 interface IPingData {
-  token: string
+  data: any
   expires: number
   expired(): boolean
 }
@@ -11,9 +11,17 @@ export class ExternalLogin {
     this.map = new Map<string, IPingData>()
   }
 
-  saveTokenInMemory(key: string, token: string) {
+  get entriesCount() {
+    return this.map.size
+  }
+
+  clear() {
+    this.map.clear()
+  }
+
+  addEntry(key: string, data: any) {
     this.map.set(key, {
-      token,
+      data,
       expires: Date.now() + this.expirationTimeInSeconds * 1000,
       expired() {
         return Date.now() > this.expires
@@ -30,13 +38,13 @@ export class ExternalLogin {
     })
   }
 
-  popToken(key: string): string | null {
+  popEntry<T>(key: string): T | undefined {
     if (this.map.has(key)) {
       const entry = this.map.get(key)!
       this.map.delete(key)
-      return entry.token
+      return entry.data as T
     }
 
-    return null
+    return undefined
   }
 }

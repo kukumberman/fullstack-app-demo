@@ -221,7 +221,7 @@ export function registerOAuth2(instance: FastifyInstance) {
     }
 
     const externalLogin = request.server.app.externalLogin
-    const token = externalLogin.popToken(guid)
+    const token = externalLogin.popEntry(guid)
     externalLogin.tryRemoveExpiredEntries()
 
     if (token != null) {
@@ -344,7 +344,7 @@ export function registerOAuth2(instance: FastifyInstance) {
     if (notEmptyState && isValidGuid) {
       const externalLogin = request.server.app.externalLogin
       //todo: probably should be saved both tokens
-      externalLogin.saveTokenInMemory(stateValue, tokenPair.accessToken)
+      externalLogin.addEntry(stateValue, tokenPair)
     }
   })
 }
