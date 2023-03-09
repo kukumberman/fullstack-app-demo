@@ -1,6 +1,6 @@
-import { Application } from "../Application"
 import { SimpleDatabase } from "../db/SimpleDatabase"
 import { UserModel } from "../db/UserModel"
+import { ApplicationEnvironment } from "../enums"
 import { CustomError, ErrorType } from "../errors"
 import { UserSchema } from "../types"
 import { UserService } from "./UserService"
@@ -8,9 +8,9 @@ import { UserService } from "./UserService"
 export class UserServiceImpl extends UserService {
   private readonly db: SimpleDatabase<UserSchema>
 
-  constructor(private readonly app: Application) {
+  constructor(environmentType: ApplicationEnvironment) {
     super()
-    this.db = new SimpleDatabase("users", app.environmentType)
+    this.db = new SimpleDatabase("users", environmentType)
   }
 
   async initialize(): Promise<void> {

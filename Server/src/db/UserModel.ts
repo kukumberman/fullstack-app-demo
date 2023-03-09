@@ -35,6 +35,22 @@ export class UserModel extends BaseModel<UserSchema> {
     return this.data.id
   }
 
+  get nickname(): string {
+    return this.data.app.nickname
+  }
+
+  set nickname(value: string) {
+    this.data.app.nickname = value
+  }
+
+  get score(): number {
+    return this.data.app.clickCounter
+  }
+
+  set score(value: number) {
+    this.data.app.clickCounter = value
+  }
+
   discordNickname(): string {
     const discord = this.data.signIn.platforms.discord
     if (discord === null) {
