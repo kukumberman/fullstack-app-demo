@@ -1,7 +1,7 @@
 import { FastifyRequest, FastifyReply } from "fastify"
 import { CookieAccessTokenName } from "./constants"
 import { AccessTokenExpiredError, UnauthorizedError } from "./errors"
-import { TokenExpiredError } from "./JwtService"
+import { TokenExpiredError } from "./services/JwtService"
 import { UserTokenPayload } from "./types"
 
 declare module "fastify" {

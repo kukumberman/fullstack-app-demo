@@ -1,6 +1,6 @@
 import { FastifyReply } from "fastify"
-import { CookieAccessTokenName, CookieRefreshTokenName } from "./constants"
-import { JwtTokenPair } from "./types"
+import { CookieAccessTokenName, CookieRefreshTokenName } from "../constants"
+import { JwtTokenPair } from "../types"
 
 export class CookieService {
   constructor() {

@@ -4,7 +4,7 @@ import { FastifyInstance } from "fastify"
 import { CustomError, ErrorType } from "../src/errors"
 import { Application } from "../src/Application"
 import { ApplicationEnvironment } from "../src/enums"
-import { JwtService } from "../src/JwtService"
+import { JwtService } from "../src/services/JwtService"
 import { sleep } from "../src/utils"
 
 dotenv.config()

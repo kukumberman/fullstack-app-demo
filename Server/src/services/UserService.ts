@@ -1,5 +1,5 @@
-import { UserModel } from "./db/UserModel"
-import { ObjectId, DiscordId, GoogleId } from "./types"
+import { UserModel } from "../db/UserModel"
+import { ObjectId, DiscordId, GoogleId } from "../types"
 
 export abstract class UserService {
   abstract initialize(): Promise<void>

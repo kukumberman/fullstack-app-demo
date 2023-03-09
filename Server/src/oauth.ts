@@ -9,7 +9,7 @@ import oauthPlugin, {
 import { UserTokenPayload } from "./types"
 import { generateTimestampString } from "./utils"
 import { UserModel } from "./db/UserModel"
-import { UserService } from "./UserService"
+import { UserService } from "./services/UserService"
 
 const GET_OAUTH2 = "customOAuth2"
 

@@ -1,4 +1,4 @@
-import { JwtTokenPair, JwtToken } from "./types"
+import { JwtTokenPair, JwtToken } from "../types"
 import { sign, verify, TokenExpiredError } from "jsonwebtoken"
 
 export { TokenExpiredError }

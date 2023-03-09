@@ -1,8 +1,8 @@
-import { Application } from "./Application"
-import { SimpleDatabase } from "./db/SimpleDatabase"
-import { UserModel } from "./db/UserModel"
-import { CustomError, ErrorType } from "./errors"
-import { UserSchema } from "./types"
+import { Application } from "../Application"
+import { SimpleDatabase } from "../db/SimpleDatabase"
+import { UserModel } from "../db/UserModel"
+import { CustomError, ErrorType } from "../errors"
+import { UserSchema } from "../types"
 import { UserService } from "./UserService"
 
 export class UserServiceImpl extends UserService {

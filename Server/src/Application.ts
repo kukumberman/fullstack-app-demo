@@ -1,8 +1,8 @@
-import { CookieService } from "./CookieService"
+import { CookieService } from "./services/CookieService"
 import { ApplicationEnvironment } from "./enums"
-import { JwtService } from "./JwtService"
-import { UserService } from "./UserService"
-import { UserServiceImpl } from "./UserServiceImpl"
+import { JwtService } from "./services/JwtService"
+import { UserService } from "./services/UserService"
+import { UserServiceImpl } from "./services/UserServiceImpl"
 import { ExternalLogin } from "./utils/ExternalLogin"
 
 export class Application {
