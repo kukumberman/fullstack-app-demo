@@ -2,6 +2,7 @@ import Fastify, { FastifyInstance } from "fastify"
 import fastifyCookie from "@fastify/cookie"
 
 import { routes } from "./userController"
+import { registerOAuth2 } from "./oauth2"
 import { UserModel } from "./db/UserModel"
 import { Application } from "./Application"
 import { CookieAccessTokenName, CookieRefreshTokenName } from "./constants"
@@ -49,6 +50,8 @@ export async function createServer(app: Application): Promise<FastifyInstance> {
   })
 
   routes(fastify)
+
+  registerOAuth2(fastify)
 
   return fastify
 }
