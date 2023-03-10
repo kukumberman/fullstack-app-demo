@@ -18,7 +18,7 @@ afterAll(async () => {
 })
 
 //todo: same problem as before
-const tempPayload = {}
+const tempPayload = { id: "0" }
 
 describe("leaderboard", () => {
   it("fails to fetch leaderboard entries without accessToken in header", async () => {

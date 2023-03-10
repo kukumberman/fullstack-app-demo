@@ -2,7 +2,10 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify"
 import { CookieRefreshTokenName } from "./constants"
 import { UserModel } from "./db/UserModel"
 import { CustomError, ErrorType } from "./errors"
-import { verifyAccessTokenFromHeader, verifyAccessTokenFromCookie } from "./middleware"
+import {
+  silentFetchUserPayloadFromHeaderOrCookie,
+  throwErrorIfUserPayloadNotFound,
+} from "./middleware"
 import { UserTokenPayload } from "./types"
 
 type BodyParams = {
@@ -166,8 +169,16 @@ async function leaderboardHandler(request: FastifyRequest, reply: FastifyReply) 
 export function routes(fastify: FastifyInstance) {
   fastify.post("/api/login", loginHandler)
   fastify.post("/api/register", registerHandler)
-  fastify.get("/api/users", { preHandler: [verifyAccessTokenFromHeader] }, getAllUsersHandler)
+  fastify.get(
+    "/api/users",
+    { preHandler: [silentFetchUserPayloadFromHeaderOrCookie, throwErrorIfUserPayloadNotFound] },
+    getAllUsersHandler
+  )
   fastify.get("/api/logout", logoutHandler)
   fastify.get("/api/refresh", refreshTokenHandler)
-  fastify.get("/api/leaderboard", { preHandler: [verifyAccessTokenFromHeader] }, leaderboardHandler)
+  fastify.get(
+    "/api/leaderboard",
+    { preHandler: [silentFetchUserPayloadFromHeaderOrCookie, throwErrorIfUserPayloadNotFound] },
+    leaderboardHandler
+  )
 }

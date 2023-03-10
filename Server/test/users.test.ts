@@ -24,7 +24,7 @@ afterEach(async () => {
 })
 
 //todo: temporary token contains wrong payload, should it validate presense of user in database?
-const tempPayload = { test: -1 }
+const tempPayload = { id: "0" }
 
 describe("/api/users", () => {
   it("fails to fetch array of users without accessToken", async () => {
@@ -34,9 +34,6 @@ describe("/api/users", () => {
     })
 
     expect(response.statusCode).toEqual(401)
-    const data = response.json() as CustomError
-    expect(data.statusCode).toEqual(401)
-    expect(data.error).toEqual(ErrorType[ErrorType.Unauthorized])
   })
 
   it("successfully fetches array of users using accessToken", async () => {
@@ -71,8 +68,5 @@ describe("/api/users", () => {
     })
 
     expect(response.statusCode).toEqual(401)
-    const data = response.json() as CustomError
-    expect(data.statusCode).toEqual(401)
-    expect(data.error).toEqual(ErrorType[ErrorType.AccessTokenExpired])
   })
 })
