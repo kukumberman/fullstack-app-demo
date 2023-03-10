@@ -157,10 +157,17 @@ async function refreshTokenHandler(request: FastifyRequest, reply: FastifyReply)
   return tokenPair
 }
 
+async function leaderboardHandler(request: FastifyRequest, reply: FastifyReply) {
+  const gameService = request.server.app.gameService
+  const entries = await gameService.getLeaderboardEntries()
+  return entries
+}
+
 export function routes(fastify: FastifyInstance) {
   fastify.post("/api/login", loginHandler)
   fastify.post("/api/register", registerHandler)
   fastify.get("/api/users", { preHandler: [verifyAccessTokenFromHeader] }, getAllUsersHandler)
   fastify.get("/api/logout", logoutHandler)
   fastify.get("/api/refresh", refreshTokenHandler)
+  fastify.get("/api/leaderboard", { preHandler: [verifyAccessTokenFromHeader] }, leaderboardHandler)
 }
