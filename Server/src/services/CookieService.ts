@@ -1,6 +1,7 @@
 import { FastifyReply } from "fastify"
 import { CookieAccessTokenName, CookieRefreshTokenName } from "../constants"
 import { JwtTokenPair } from "../types"
+import { TokenType } from "./JwtService"
 
 export class CookieService {
   constructor() {
@@ -13,10 +14,10 @@ export class CookieService {
   }
 
   setAccessToken(reply: FastifyReply, value: string) {
-    reply.setCookie(CookieAccessTokenName, value, { path: "/", httpOnly: false })
+    reply.setCookie(CookieAccessTokenName, TokenType + " " + value, { path: "/", httpOnly: false })
   }
 
   setRefreshToken(reply: FastifyReply, value: string) {
-    reply.setCookie(CookieRefreshTokenName, value, { path: "/", httpOnly: true })
+    reply.setCookie(CookieRefreshTokenName, TokenType + " " + value, { path: "/", httpOnly: true })
   }
 }

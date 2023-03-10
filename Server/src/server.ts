@@ -7,6 +7,10 @@ import { UserModel } from "./db/UserModel"
 import { Application } from "./Application"
 import { CookieAccessTokenName, CookieRefreshTokenName } from "./constants"
 import { UserTokenPayload } from "./types"
+import {
+  silentFetchUserPayloadFromHeaderOrCookie,
+  silentFetchUserModelFromPayload,
+} from "./middleware"
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -26,24 +30,17 @@ export async function createServer(app: Application): Promise<FastifyInstance> {
   })
 
   // temporary solution (as frontend does not exist) to get info about current logged user at root page
-  fastify.get("/", async (request, reply) => {
-    const jwtService = request.server.app.jwtService
-    const userService = request.server.app.userService
-    //todo: try to use refreshToken in accessToken is expired
-    try {
-      const cookieAccessToken: string | undefined = request.cookies[CookieAccessTokenName]
-      if (cookieAccessToken !== undefined) {
-        const payload = jwtService.verify(cookieAccessToken) as UserTokenPayload
-        const user: UserModel | undefined = await userService.findOneById(payload.id)
-        if (user !== undefined) {
-          return user
-        }
+  fastify.get(
+    "/",
+    { preHandler: [silentFetchUserPayloadFromHeaderOrCookie, silentFetchUserModelFromPayload] },
+    async (request, reply) => {
+      if (request.currentUser !== undefined) {
+        return request.currentUser
+      } else {
+        return { message: "Hello, World!" }
       }
-    } catch (error) {
-      return error
     }
-    return { message: "Hello, World!" }
-  })
+  )
 
   fastify.get("/api", (request, reply) => {
     return { message: "api" }

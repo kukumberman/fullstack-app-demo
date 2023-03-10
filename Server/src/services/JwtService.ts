@@ -1,7 +1,9 @@
 import { JwtTokenPair, JwtToken } from "../types"
 import { sign, verify, TokenExpiredError } from "jsonwebtoken"
 
-export { TokenExpiredError }
+const TokenType = "Bearer"
+
+export { TokenExpiredError, TokenType }
 
 export class JwtService {
   private readonly secret: string
