@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify"
-import { CookieRefreshTokenName } from "./constants"
+import { CookieRefreshTokenName } from "./services/CookieService"
 import { UserModel } from "./db/UserModel"
 import { CustomError, ErrorType } from "./errors"
 import {

@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from "fastify"
-import { CookieAccessTokenName } from "./constants"
+import { CookieAccessTokenName } from "./services/CookieService"
 import { UserModel } from "./db/UserModel"
 import { TokenType } from "./services/JwtService"
 import { UserTokenPayload } from "./types"

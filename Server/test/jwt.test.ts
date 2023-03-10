@@ -3,7 +3,7 @@ import dotenv from "dotenv"
 import { FastifyInstance } from "fastify"
 import { Application } from "../src/Application"
 import { ApplicationEnvironment } from "../src/enums"
-import { CookieRefreshTokenName } from "../src/constants"
+import { CookieRefreshTokenName } from "../src/services/CookieService"
 import { JwtService } from "../src/services/JwtService"
 import { UserModel } from "../src/db/UserModel"
 

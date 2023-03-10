@@ -3,10 +3,7 @@ import fastifyCookie from "@fastify/cookie"
 
 import { routes } from "./userController"
 import { registerOAuth2 } from "./oauth2"
-import { UserModel } from "./db/UserModel"
 import { Application } from "./Application"
-import { CookieAccessTokenName, CookieRefreshTokenName } from "./constants"
-import { UserTokenPayload } from "./types"
 import {
   silentFetchUserPayloadFromHeaderOrCookie,
   silentFetchUserModelFromPayload,
