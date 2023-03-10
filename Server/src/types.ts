@@ -39,9 +39,15 @@ export type SignIn = {
 }
 
 export type AppFields = {
-  nickname: string
+  nickname: NicknameFields
   clickCounter: number
   experienceAmount: number
+}
+
+export type NicknameFields = {
+  value: string
+  timesUpdated: number
+  history: string[]
 }
 
 export interface UserSchema {

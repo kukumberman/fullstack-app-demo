@@ -24,7 +24,11 @@ export class UserModel extends BaseModel<UserSchema> {
         },
       },
       app: {
-        nickname: initialNickname,
+        nickname: {
+          value: initialNickname,
+          timesUpdated: 0,
+          history: [],
+        },
         clickCounter: 0,
         experienceAmount: 0,
       },
@@ -36,11 +40,19 @@ export class UserModel extends BaseModel<UserSchema> {
   }
 
   get nickname(): string {
-    return this.data.app.nickname
+    return this.data.app.nickname.value
   }
 
-  set nickname(value: string) {
-    this.data.app.nickname = value
+  updateNickname(value: string): boolean {
+    const currentValue = this.data.app.nickname.value
+    if (currentValue != value) {
+      this.data.app.nickname.history.push(currentValue)
+      this.data.app.nickname.timesUpdated++
+      this.data.app.nickname.value = value
+      return true
+    }
+
+    return false
   }
 
   get score(): number {
