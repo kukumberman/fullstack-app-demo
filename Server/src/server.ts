@@ -39,8 +39,8 @@ export async function createServer(app: Application): Promise<FastifyInstance> {
     }
   )
 
-  fastify.get("/api", (request, reply) => {
-    return { message: "api" }
+  fastify.get("/ping", (request, reply) => {
+    return { message: "pong" }
   })
 
   routes(fastify)
