@@ -1,4 +1,4 @@
-import { DiscordOAuth2Handler, GoogleOAuth2Handler } from "../../src/auth/OAuth2Handler"
+import { DiscordOAuth2Handler, GoogleOAuth2Handler } from "@src/auth/OAuth2Handler"
 
 /**
  * @api https://www.googleapis.com/oauth2/v2/userinfo
