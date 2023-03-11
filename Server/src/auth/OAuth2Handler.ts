@@ -1,9 +1,12 @@
 import { AccessToken, AuthorizationCode, Token } from "simple-oauth2"
 import axios from "axios"
+import Ajv, { JSONSchemaType, ValidateFunction } from "ajv"
 import { UserModel } from "../db/UserModel"
-import { DiscordSignInFields, GoogleSignInFields } from "../types"
+import { DiscordUserFields, GoogleUserFields } from "../types"
 import { generateTimestampString } from "../utils"
 import { UserService } from "../services/UserService"
+
+const ajv = new Ajv()
 
 async function fetchProfile(profileApiUri: string, token: Token): Promise<any> {
   const response = await axios.get(profileApiUri, {
@@ -35,6 +38,8 @@ export abstract class OAuth2Handler {
     userService: UserService,
     data: any
   ): Promise<UserModel | undefined>
+
+  abstract isDataValid(data: any): boolean
 
   fetchProfile(token: Token): Promise<any> {
     return fetchProfile(this.profileApiUrl, token)
@@ -69,6 +74,8 @@ export abstract class OAuth2Handler {
 }
 
 export class DiscordOAuth2Handler extends OAuth2Handler {
+  private readonly validateFunction: ValidateFunction
+
   constructor() {
     super(
       "discord",
@@ -77,6 +84,19 @@ export class DiscordOAuth2Handler extends OAuth2Handler {
       ["identify"],
       "https://discord.com/api/users/@me"
     )
+
+    const schema: JSONSchemaType<DiscordUserFields> = {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        username: { type: "string" },
+        discriminator: { type: "string" },
+        avatar: { type: "string" },
+      },
+      additionalProperties: true,
+      required: ["id", "username", "discriminator", "avatar"],
+    }
+    this.validateFunction = ajv.compile(schema)
   }
 
   protected createClient(): AuthorizationCode {
@@ -95,7 +115,7 @@ export class DiscordOAuth2Handler extends OAuth2Handler {
   }
 
   assignOrUpdateFields(user: UserModel, data: any) {
-    const fields = data as DiscordSignInFields
+    const fields = data as DiscordUserFields
     const now = generateTimestampString()
     if (user.data.signIn.platforms.discord === null) {
       user.data.signIn.platforms.discord = {
@@ -117,12 +137,18 @@ export class DiscordOAuth2Handler extends OAuth2Handler {
   }
 
   findUserWithSamePlatform(userService: UserService, data: any): Promise<UserModel | undefined> {
-    const fields = data as DiscordSignInFields
+    const fields = data as DiscordUserFields
     return userService.findOneByDiscordId(fields.id)
+  }
+
+  isDataValid(data: any): boolean {
+    return this.validateFunction(data)
   }
 }
 
 export class GoogleOAuth2Handler extends OAuth2Handler {
+  private readonly validateFunction: ValidateFunction
+
   constructor() {
     super(
       "google",
@@ -131,6 +157,20 @@ export class GoogleOAuth2Handler extends OAuth2Handler {
       ["profile", "email"],
       "https://www.googleapis.com/oauth2/v2/userinfo"
     )
+
+    const schema: JSONSchemaType<GoogleUserFields> = {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        email: { type: "string" },
+        name: { type: "string" },
+        picture: { type: "string" },
+      },
+      additionalProperties: true,
+      required: ["id", "email", "name", "picture"],
+    }
+
+    this.validateFunction = ajv.compile(schema)
   }
 
   protected createClient(): AuthorizationCode {
@@ -149,7 +189,7 @@ export class GoogleOAuth2Handler extends OAuth2Handler {
   }
 
   assignOrUpdateFields(user: UserModel, data: any) {
-    const fields = data as GoogleSignInFields
+    const fields = data as GoogleUserFields
     const now = generateTimestampString()
     if (user.data.signIn.platforms.google === null) {
       user.data.signIn.platforms.google = {
@@ -171,7 +211,11 @@ export class GoogleOAuth2Handler extends OAuth2Handler {
   }
 
   findUserWithSamePlatform(userService: UserService, data: any): Promise<UserModel | undefined> {
-    const fields = data as GoogleSignInFields
+    const fields = data as GoogleUserFields
     return userService.findOneByGoogleId(fields.id)
+  }
+
+  isDataValid(data: any): boolean {
+    return this.validateFunction(data)
   }
 }

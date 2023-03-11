@@ -4,28 +4,33 @@ export type DiscordId = string
 
 export type GoogleId = string
 
+export type EntryDateTimeFields = {
+  createdAt: string
+  updatedAt: string
+}
+
 export type SignInPlatforms = {
   discord: DiscordSignInFields | null
   google: GoogleSignInFields | null
 }
 
-export type DiscordSignInFields = {
+export type DiscordUserFields = {
   id: DiscordId
   username: string
   avatar: string
   discriminator: string
-  createdAt: string
-  updatedAt: string
 }
 
-export type GoogleSignInFields = {
+export type DiscordSignInFields = DiscordUserFields & EntryDateTimeFields
+
+export type GoogleUserFields = {
   id: GoogleId
   email: string
   name: string
   picture: string
-  createdAt: string
-  updatedAt: string
 }
+
+export type GoogleSignInFields = GoogleUserFields & EntryDateTimeFields
 
 export type StandardSignInFields = {
   email: string

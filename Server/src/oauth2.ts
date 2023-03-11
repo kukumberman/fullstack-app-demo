@@ -154,6 +154,14 @@ async function loginCallbackHandler(
   const token = accessToken.token
   const data = await oauth2Handler.fetchProfile(token)
 
+  if (!oauth2Handler.isDataValid(data)) {
+    return {
+      ok: false,
+      message: "failed to validate data (probably structure was changed)",
+      data,
+    }
+  }
+
   const userService = request.server.app.userService
   const jwtService = request.server.app.jwtService
   const cookieService = request.server.app.cookieService
