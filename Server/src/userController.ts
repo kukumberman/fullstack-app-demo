@@ -135,7 +135,21 @@ async function refreshTokenHandler(request: FastifyRequest, reply: FastifyReply)
   const jwtService = request.server.app.jwtService
   const cookieService = request.server.app.cookieService
 
-  const userPayload = jwtService.verify(refreshToken) as UserTokenPayload
+  let userPayload: UserTokenPayload
+
+  try {
+    const payload = jwtService.verify(refreshToken) as any
+    if (typeof payload.id !== "string") {
+      throw new Error()
+    }
+    userPayload = payload as UserTokenPayload
+  } catch (e) {
+    reply.code(401)
+    return {
+      ok: false,
+    }
+  }
+
   const user: UserModel | undefined = await userService.findOneById(userPayload.id)
   if (user === undefined) {
     reply.code(404)

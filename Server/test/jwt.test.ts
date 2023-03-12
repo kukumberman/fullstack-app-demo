@@ -86,10 +86,7 @@ describe("refresh token via cookie", () => {
       },
     })
 
-    //todo: temporary solution - server error has been thrown
-    expect(response.statusCode).toEqual(500)
-    const data = response.json()
-    expect(data.message).toEqual("jwt expired")
+    expect(response.statusCode).toEqual(401)
   })
 })
 
