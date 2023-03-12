@@ -3,6 +3,7 @@ import {
   silentFetchUserPayloadFromHeaderOrCookie,
   silentFetchUserModelFromPayload,
   throwErrorIfUserPayloadNotFound,
+  throwErrorIfUserModelNotFound,
 } from "@src/middleware"
 import {
   userLoginHandler,
@@ -19,6 +20,7 @@ import {
   loginCallbackHandler,
   QuerySession,
   ParamPlatform,
+  disconnectHandler,
 } from "@src/routes/oauth2"
 
 export function useRoutes(fastifyInstance: FastifyInstance) {
@@ -35,6 +37,18 @@ export function useRoutes(fastifyInstance: FastifyInstance) {
     "/api/leaderboard",
     { preHandler: [silentFetchUserPayloadFromHeaderOrCookie, throwErrorIfUserPayloadNotFound] },
     leaderboardHandler
+  )
+  fastifyInstance.get<ParamPlatform>(
+    "/api/disconnect/:platform",
+    {
+      preHandler: [
+        silentFetchUserPayloadFromHeaderOrCookie,
+        throwErrorIfUserPayloadNotFound,
+        silentFetchUserModelFromPayload,
+        throwErrorIfUserModelNotFound,
+      ],
+    },
+    disconnectHandler
   )
 
   fastifyInstance.get("/login/external", externalLoginHandler)

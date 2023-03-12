@@ -1,9 +1,14 @@
 import { ObjectId, SignInPlatforms, UserSchema } from "../types"
 import { generateTemporaryNickname, generateTimestampString } from "../utils"
 import { generateId } from "../utils/id"
+import { PlatformDisconnectResult } from "@src/enums"
 
 export abstract class BaseModel<T> {
-  constructor(public data: T) {}
+  public isChanged: boolean
+
+  constructor(public data: T) {
+    this.isChanged = false
+  }
 }
 
 export class UserModel extends BaseModel<UserSchema> {
@@ -73,6 +78,26 @@ export class UserModel extends BaseModel<UserSchema> {
 
   hasConnectedPlatform(platform: string): boolean {
     return this.data.signIn.platforms[platform as keyof SignInPlatforms] != null
+  }
+
+  tryDisconnect(platform: string): PlatformDisconnectResult {
+    if (!this.hasConnectedPlatform(platform)) {
+      return PlatformDisconnectResult.NotConnected
+    }
+
+    const enabledStandardLogin = this.data.signIn.standard !== null
+    const platforms = this.data.signIn.platforms
+    const amountOfConnectedPlatforms = Object.values(platforms).filter(
+      (entry) => entry !== null
+    ).length
+
+    if (!enabledStandardLogin && amountOfConnectedPlatforms === 1) {
+      return PlatformDisconnectResult.AtLeastOneRequired
+    }
+
+    platforms[platform as keyof SignInPlatforms] = null
+    this.isChanged = true
+    return PlatformDisconnectResult.Disconnected
   }
 
   logOut() {

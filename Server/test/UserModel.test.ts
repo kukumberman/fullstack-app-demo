@@ -1,4 +1,6 @@
 import { UserModel } from "../src/db/UserModel"
+import { PlatformDisconnectResult } from "@src/enums"
+import { placeholderDiscordSignInFields, placeholderGoogleSignInFields } from "./constants"
 
 let user: UserModel
 
@@ -38,5 +40,47 @@ describe("nickname", () => {
     expect(user.data.app.nickname.timesUpdated).toEqual(2)
     expect(user.data.app.nickname.history.length).toEqual(2)
     expect(user.data.app.nickname.history[1]).toEqual(nickname1st)
+  })
+})
+
+describe("disconnect", () => {
+  it("fails to disconnect when have only one platform and has no standard login", () => {
+    user.data.signIn.platforms.google = placeholderGoogleSignInFields
+    const result = user.tryDisconnect("google")
+    expect(result).toBe(PlatformDisconnectResult.AtLeastOneRequired)
+  })
+
+  it("fails to disconnect not connected profile", () => {
+    const result = user.tryDisconnect("google")
+    expect(result).toBe(PlatformDisconnectResult.NotConnected)
+  })
+
+  it("successfully disconnects platform when user has 2 or more connected platforms", () => {
+    user.data.signIn.platforms.google = placeholderGoogleSignInFields
+    user.data.signIn.platforms.discord = placeholderDiscordSignInFields
+
+    const result1 = user.tryDisconnect("google")
+    expect(result1).toBe(PlatformDisconnectResult.Disconnected)
+
+    const result2 = user.tryDisconnect("discord")
+    expect(result2).toBe(PlatformDisconnectResult.AtLeastOneRequired)
+
+    const result3 = user.tryDisconnect("google")
+    expect(result3).toBe(PlatformDisconnectResult.NotConnected)
+  })
+
+  it("successfully disconnects all platform when user standard login method", () => {
+    user.data.signIn.platforms.google = placeholderGoogleSignInFields
+    user.data.signIn.platforms.discord = placeholderDiscordSignInFields
+    user.data.signIn.standard = {
+      email: "",
+      password: "",
+    }
+
+    const result1 = user.tryDisconnect("google")
+    expect(result1).toBe(PlatformDisconnectResult.Disconnected)
+
+    const result2 = user.tryDisconnect("discord")
+    expect(result2).toBe(PlatformDisconnectResult.Disconnected)
   })
 })

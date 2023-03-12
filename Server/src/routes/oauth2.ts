@@ -3,6 +3,7 @@ import { AccessToken } from "simple-oauth2"
 import { OAuth2Handler } from "@src/auth/OAuth2Handler"
 import { UserModel } from "@src/db/UserModel"
 import { JwtTokenPair } from "@src/types"
+import { PlatformDisconnectResult, stringifyPlatformDisconnectResult } from "@src/enums"
 
 const ExternalPrefix = "EXTERNAL_"
 const EmptyState = "none"
@@ -253,4 +254,33 @@ export async function externalLoginHandler(
   }
 
   return tokenPair
+}
+
+export async function disconnectHandler(
+  request: FastifyRequest<ParamPlatform>,
+  reply: FastifyReply
+) {
+  const oauth2Service = request.server.app.oauth2Service
+  const platform = request.params.platform
+
+  if (oauth2Service.find(platform) === undefined) {
+    return {
+      ok: false,
+      message: stringifyPlatformDisconnectResult(PlatformDisconnectResult.InvalidPlatform),
+    }
+  }
+
+  const user = request.currentUser!
+
+  const result = user.tryDisconnect(platform)
+
+  if (user.isChanged) {
+    const userService = request.server.app.userService
+    await userService.save(user)
+  }
+
+  return {
+    ok: result === PlatformDisconnectResult.Disconnected,
+    message: stringifyPlatformDisconnectResult(result),
+  }
 }
