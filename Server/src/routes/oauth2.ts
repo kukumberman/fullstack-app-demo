@@ -135,8 +135,16 @@ export async function loginCallbackHandler(
     }
   }
 
-  const token = accessToken.token
-  const data = await oauth2Handler.fetchProfile(token)
+  let data: any
+  try {
+    const token = accessToken.token
+    data = await oauth2Handler.fetchProfile(token)
+  } catch (e) {
+    return {
+      ok: false,
+      message: "failed to fetch user profile",
+    }
+  }
 
   if (!oauth2Handler.isDataValid(data)) {
     return {
@@ -191,6 +199,12 @@ export async function loginCallbackHandler(
     } else {
       const user: UserModel | undefined = await userService.findOneById(payload)
       if (user !== undefined) {
+        if (oauth2Handler.isDifferentAccountConnected(user, data)) {
+          return {
+            ok: false,
+            message: "you already connected different account to this profile",
+          }
+        }
         oauth2Handler.assignOrUpdateFields(user, data)
         await userService.save(user)
         userId = user.id

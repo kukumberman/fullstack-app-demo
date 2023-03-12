@@ -32,6 +32,8 @@ export abstract class OAuth2Handler {
 
   protected abstract createClient(): AuthorizationCode
 
+  abstract isDifferentAccountConnected(user: UserModel, data: any): boolean
+
   abstract assignOrUpdateFields(user: UserModel, data: any): void
 
   abstract findUserWithSamePlatform(
@@ -114,6 +116,18 @@ export class DiscordOAuth2Handler extends OAuth2Handler {
     })
   }
 
+  isDifferentAccountConnected(user: UserModel, data: any): boolean {
+    const fields = data as DiscordUserFields
+    const platform = user.data.signIn.platforms.discord
+    if (platform === null) {
+      return false
+    }
+    if (platform.id !== fields.id) {
+      return true
+    }
+    return false
+  }
+
   assignOrUpdateFields(user: UserModel, data: any) {
     const fields = data as DiscordUserFields
     const now = generateTimestampString()
@@ -186,6 +200,18 @@ export class GoogleOAuth2Handler extends OAuth2Handler {
         tokenPath: "/oauth2/v4/token",
       },
     })
+  }
+
+  isDifferentAccountConnected(user: UserModel, data: any): boolean {
+    const fields = data as GoogleUserFields
+    const platform = user.data.signIn.platforms.google
+    if (platform === null) {
+      return false
+    }
+    if (platform.id !== fields.id) {
+      return true
+    }
+    return false
   }
 
   assignOrUpdateFields(user: UserModel, data: any) {
