@@ -22,7 +22,7 @@ import {
   ParamPlatform,
   disconnectHandler,
 } from "@src/routes/oauth2"
-import { clickHandler } from "@src/routes/profile"
+import { clickHandler, profileInfoHandler } from "@src/routes/profile"
 
 export function useRoutes(fastifyInstance: FastifyInstance) {
   fastifyInstance.post("/api/login", userLoginHandler)
@@ -76,5 +76,18 @@ export function useRoutes(fastifyInstance: FastifyInstance) {
       ],
     },
     clickHandler
+  )
+
+  fastifyInstance.get(
+    "/api/profile/me",
+    {
+      preHandler: [
+        silentFetchUserPayloadFromHeaderOrCookie,
+        throwErrorIfUserPayloadNotFound,
+        silentFetchUserModelFromPayload,
+        throwErrorIfUserModelNotFound,
+      ],
+    },
+    profileInfoHandler
   )
 }

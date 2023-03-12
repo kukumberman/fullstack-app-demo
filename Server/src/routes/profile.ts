@@ -9,3 +9,8 @@ export async function clickHandler(request: FastifyRequest, reply: FastifyReply)
     clickCounter: user.data.app.clickCounter,
   }
 }
+
+export async function profileInfoHandler(request: FastifyRequest, reply: FastifyReply) {
+  const user = request.currentUser!
+  return user.data
+}
