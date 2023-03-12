@@ -1,6 +1,9 @@
 import fs from "fs"
+import path from "path"
 
 export abstract class AsyncAdapter<T> {
+  abstract initialize(): Promise<void>
+
   abstract read(): Promise<T>
 
   abstract write(data: T): Promise<void>
@@ -9,6 +12,10 @@ export abstract class AsyncAdapter<T> {
 export class MemoryAsyncAdapter<T> extends AsyncAdapter<T> {
   constructor(public data: T) {
     super()
+  }
+
+  initialize(): Promise<void> {
+    return Promise.resolve()
   }
 
   read(): Promise<T> {
@@ -22,8 +29,22 @@ export class MemoryAsyncAdapter<T> extends AsyncAdapter<T> {
 }
 
 export class JsonFileAsyncAdapter<T> extends AsyncAdapter<T> {
-  constructor(private readonly pathToFile: string, private readonly prettyPrint: boolean = true) {
+  constructor(
+    private readonly pathToFile: string,
+    private readonly empty: T,
+    private readonly prettyPrint: boolean = true
+  ) {
     super()
+  }
+
+  async initialize(): Promise<void> {
+    const directory = path.dirname(this.pathToFile)
+    if (!fs.existsSync(directory)) {
+      fs.mkdirSync(directory, { recursive: true })
+    }
+    if (!fs.existsSync(this.pathToFile)) {
+      await this.write(this.empty)
+    }
   }
 
   async read(): Promise<T> {

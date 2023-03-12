@@ -1,4 +1,3 @@
-import fs from "fs"
 import path from "path"
 import { ApplicationEnvironment } from "../enums"
 import { AsyncAdapter, MemoryAsyncAdapter, JsonFileAsyncAdapter } from "./Adapter"
@@ -15,18 +14,11 @@ export class SimpleDatabase<T> {
     this.adapter =
       environmentType == ApplicationEnvironment.Test
         ? new MemoryAsyncAdapter<T[]>(this.data)
-        : new JsonFileAsyncAdapter<T[]>(this.pathToFile)
+        : new JsonFileAsyncAdapter<T[]>(this.pathToFile, this.data)
   }
 
   async initialize(): Promise<void> {
-    const directory = path.dirname(this.pathToFile)
-    if (!fs.existsSync(directory)) {
-      fs.mkdirSync(directory, { recursive: true })
-    }
-
-    if (!fs.existsSync(this.pathToFile)) {
-      await this.write()
-    }
+    await this.adapter.initialize()
   }
 
   async read(): Promise<void> {
