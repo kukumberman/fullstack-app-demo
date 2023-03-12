@@ -13,13 +13,12 @@ export abstract class BaseModel<T> {
 
 export class UserModel extends BaseModel<UserSchema> {
   static New(): UserModel {
-    const now = generateTimestampString()
-    const initialNickname = generateTemporaryNickname(now)
+    const initialNickname = generateTemporaryNickname(generateTimestampString())
 
     return new UserModel({
       id: generateId(),
-      createdAt: now,
-      updatedAt: now,
+      createdAt: "",
+      updatedAt: "",
       signIn: {
         refreshToken: "",
         standard: null,

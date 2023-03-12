@@ -4,6 +4,7 @@ import { ApplicationEnvironment } from "../enums"
 import { CustomError, ErrorType } from "../errors"
 import { UserSchema } from "../types"
 import { UserService } from "./UserService"
+import { generateTimestampString } from "@src/utils"
 
 export class UserServiceImpl extends UserService {
   private readonly db: SimpleDatabase<UserSchema>
@@ -92,10 +93,14 @@ export class UserServiceImpl extends UserService {
 
   async save(user: UserModel): Promise<void> {
     await this.db.read()
+    const now = generateTimestampString()
     const index = this.db.data.findIndex((entry) => entry.id === user.data.id)
     if (index == -1) {
+      user.data.createdAt = now
+      user.data.updatedAt = now
       this.db.data.push(user.data)
     } else {
+      user.data.updatedAt = now
       this.db.data[index] = user.data
     }
     await this.db.write()
