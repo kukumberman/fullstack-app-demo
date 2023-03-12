@@ -1,6 +1,6 @@
 import path from "path"
 import { ApplicationEnvironment } from "../enums"
-import { AsyncAdapter, MemoryAsyncAdapter, JsonFileAsyncAdapter } from "./Adapter"
+import { AsyncAdapter, MemoryAsyncAdapter, JsonFileFakeAsyncAdapter } from "./Adapter"
 
 export class SimpleDatabase<T> {
   private readonly pathToFile: string
@@ -14,7 +14,7 @@ export class SimpleDatabase<T> {
     this.adapter =
       environmentType == ApplicationEnvironment.Test
         ? new MemoryAsyncAdapter<T[]>(this.data)
-        : new JsonFileAsyncAdapter<T[]>(this.pathToFile, this.data)
+        : new JsonFileFakeAsyncAdapter<T[]>(this.pathToFile, this.data)
   }
 
   async initialize(): Promise<void> {

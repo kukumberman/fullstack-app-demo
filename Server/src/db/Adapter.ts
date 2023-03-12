@@ -57,3 +57,36 @@ export class JsonFileAsyncAdapter<T> extends AsyncAdapter<T> {
     return fs.promises.writeFile(this.pathToFile, text)
   }
 }
+
+export class JsonFileFakeAsyncAdapter<T> extends AsyncAdapter<T> {
+  constructor(
+    private readonly pathToFile: string,
+    private readonly empty: T,
+    private readonly prettyPrint: boolean = true
+  ) {
+    super()
+  }
+
+  async initialize(): Promise<void> {
+    const directory = path.dirname(this.pathToFile)
+    if (!fs.existsSync(directory)) {
+      fs.mkdirSync(directory, { recursive: true })
+    }
+    if (!fs.existsSync(this.pathToFile)) {
+      await this.write(this.empty)
+    }
+  }
+
+  read(): Promise<T> {
+    const buffer = fs.readFileSync(this.pathToFile)
+    const text = buffer.toString()
+    const data = JSON.parse(text) as T
+    return Promise.resolve(data)
+  }
+
+  write(data: T): Promise<void> {
+    const text = JSON.stringify(data, null, this.prettyPrint ? 2 : 0)
+    fs.writeFileSync(this.pathToFile, text)
+    return Promise.resolve()
+  }
+}
