@@ -1,8 +1,9 @@
+import "module-alias/register"
 import dotenv from "dotenv"
 import { FastifyListenOptions } from "fastify"
 import { Application } from "./Application"
 import { ApplicationEnvironment } from "./enums"
-import { createServer } from "./server"
+import { createServer } from "@src/server"
 
 dotenv.config()
 
