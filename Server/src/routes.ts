@@ -3,7 +3,7 @@ import {
   silentFetchUserPayloadFromHeaderOrCookie,
   silentFetchUserModelFromPayload,
   throwErrorIfUserPayloadNotFound,
-} from "./middleware"
+} from "@src/middleware"
 import {
   userLoginHandler,
   userRegisterHandler,
@@ -11,7 +11,7 @@ import {
   userLogoutHandler,
   refreshTokenHandler,
   leaderboardHandler,
-} from "./userController"
+} from "@src/routes/userController"
 import {
   externalLoginHandler,
   platformLoginHandler,
@@ -19,7 +19,7 @@ import {
   loginCallbackHandler,
   QuerySession,
   ParamPlatform,
-} from "./oauth2"
+} from "@src/routes/oauth2"
 
 export function useRoutes(fastifyInstance: FastifyInstance) {
   fastifyInstance.post("/api/login", userLoginHandler)

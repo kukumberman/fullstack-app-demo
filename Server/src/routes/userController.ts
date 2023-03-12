@@ -1,8 +1,8 @@
 import { FastifyRequest, FastifyReply } from "fastify"
-import { CookieRefreshTokenName } from "./services/CookieService"
-import { UserModel } from "./db/UserModel"
-import { CustomError, ErrorType } from "./errors"
-import { UserTokenPayload } from "./types"
+import { CookieRefreshTokenName } from "@src/services/CookieService"
+import { UserModel } from "@src/db/UserModel"
+import { CustomError, ErrorType } from "@src/errors"
+import { UserTokenPayload } from "@src/types"
 
 type BodyParams = {
   email: any | undefined

@@ -1,8 +1,8 @@
 import { FastifyReply, FastifyRequest } from "fastify"
 import { AccessToken } from "simple-oauth2"
-import { OAuth2Handler } from "./auth/OAuth2Handler"
-import { UserModel } from "./db/UserModel"
-import { JwtTokenPair } from "./types"
+import { OAuth2Handler } from "@src/auth/OAuth2Handler"
+import { UserModel } from "@src/db/UserModel"
+import { JwtTokenPair } from "@src/types"
 
 const ExternalPrefix = "EXTERNAL_"
 const EmptyState = "none"
