@@ -1,11 +1,7 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify"
+import { FastifyRequest, FastifyReply } from "fastify"
 import { CookieRefreshTokenName } from "./services/CookieService"
 import { UserModel } from "./db/UserModel"
 import { CustomError, ErrorType } from "./errors"
-import {
-  silentFetchUserPayloadFromHeaderOrCookie,
-  throwErrorIfUserPayloadNotFound,
-} from "./middleware"
 import { UserTokenPayload } from "./types"
 
 type BodyParams = {
@@ -13,7 +9,10 @@ type BodyParams = {
   password: any | undefined
 }
 
-async function loginHandler(request: FastifyRequest<{ Body: BodyParams }>, reply: FastifyReply) {
+export async function userLoginHandler(
+  request: FastifyRequest<{ Body: BodyParams }>,
+  reply: FastifyReply
+) {
   const email = request.body.email
   const password = request.body.password
 
@@ -49,7 +48,10 @@ async function loginHandler(request: FastifyRequest<{ Body: BodyParams }>, reply
   }
 }
 
-async function registerHandler(request: FastifyRequest<{ Body: BodyParams }>, reply: FastifyReply) {
+export async function userRegisterHandler(
+  request: FastifyRequest<{ Body: BodyParams }>,
+  reply: FastifyReply
+) {
   const email = request.body.email
   const password = request.body.password
 
@@ -85,14 +87,14 @@ async function registerHandler(request: FastifyRequest<{ Body: BodyParams }>, re
   }
 }
 
-async function getAllUsersHandler(request: FastifyRequest, reply: FastifyReply) {
+export async function getAllUsersHandler(request: FastifyRequest, reply: FastifyReply) {
   //todo: only public (non sensitive) data per each user
   const userService = request.server.app.userService
   const users = await userService.getAll()
   return users
 }
 
-async function logoutHandler(request: FastifyRequest, reply: FastifyReply) {
+export async function userLogoutHandler(request: FastifyRequest, reply: FastifyReply) {
   const refreshToken: string | undefined = request.cookies[CookieRefreshTokenName]
   if (refreshToken === undefined) {
     reply.code(401)
@@ -122,7 +124,7 @@ async function logoutHandler(request: FastifyRequest, reply: FastifyReply) {
   }
 }
 
-async function refreshTokenHandler(request: FastifyRequest, reply: FastifyReply) {
+export async function refreshTokenHandler(request: FastifyRequest, reply: FastifyReply) {
   const refreshToken: string | undefined = request.cookies[CookieRefreshTokenName]
   if (refreshToken === undefined) {
     reply.code(401)
@@ -174,25 +176,8 @@ async function refreshTokenHandler(request: FastifyRequest, reply: FastifyReply)
   return tokenPair
 }
 
-async function leaderboardHandler(request: FastifyRequest, reply: FastifyReply) {
+export async function leaderboardHandler(request: FastifyRequest, reply: FastifyReply) {
   const gameService = request.server.app.gameService
   const entries = await gameService.getLeaderboardEntries()
   return entries
-}
-
-export function routes(fastify: FastifyInstance) {
-  fastify.post("/api/login", loginHandler)
-  fastify.post("/api/register", registerHandler)
-  fastify.get(
-    "/api/users",
-    { preHandler: [silentFetchUserPayloadFromHeaderOrCookie, throwErrorIfUserPayloadNotFound] },
-    getAllUsersHandler
-  )
-  fastify.get("/api/logout", logoutHandler)
-  fastify.get("/api/refresh", refreshTokenHandler)
-  fastify.get(
-    "/api/leaderboard",
-    { preHandler: [silentFetchUserPayloadFromHeaderOrCookie, throwErrorIfUserPayloadNotFound] },
-    leaderboardHandler
-  )
 }

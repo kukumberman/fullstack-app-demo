@@ -1,13 +1,12 @@
 import Fastify, { FastifyInstance } from "fastify"
 import fastifyCookie from "@fastify/cookie"
 
-import { routes } from "./userController"
-import { registerOAuth2 } from "./oauth2"
 import { Application } from "./Application"
 import {
   silentFetchUserPayloadFromHeaderOrCookie,
   silentFetchUserModelFromPayload,
 } from "./middleware"
+import { useRoutes } from "./routes"
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -43,9 +42,7 @@ export async function createServer(app: Application): Promise<FastifyInstance> {
     return { message: "pong" }
   })
 
-  routes(fastify)
-
-  registerOAuth2(fastify)
+  useRoutes(fastify)
 
   return fastify
 }

@@ -1,38 +1,19 @@
-import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify"
+import { FastifyReply, FastifyRequest } from "fastify"
 import { AccessToken } from "simple-oauth2"
 import { OAuth2Handler } from "./auth/OAuth2Handler"
 import { UserModel } from "./db/UserModel"
-import {
-  silentFetchUserPayloadFromHeaderOrCookie,
-  silentFetchUserModelFromPayload,
-} from "./middleware"
 import { JwtTokenPair } from "./types"
-
-export function registerOAuth2(fastifyInstance: FastifyInstance) {
-  fastifyInstance.get("/login/external", externalLoginHandler)
-  fastifyInstance.get<QuerySession>(
-    "/login/all",
-    { preHandler: [silentFetchUserPayloadFromHeaderOrCookie, silentFetchUserModelFromPayload] },
-    allPlatformsHandler
-  )
-  fastifyInstance.get<ParamPlatform & QuerySession>(
-    "/login/:platform",
-    { preHandler: [silentFetchUserPayloadFromHeaderOrCookie, silentFetchUserModelFromPayload] },
-    loginHandler
-  )
-  fastifyInstance.get("/login/:platform/callback", loginCallbackHandler)
-}
 
 const ExternalPrefix = "EXTERNAL_"
 const EmptyState = "none"
 
-type ParamPlatform = {
+export type ParamPlatform = {
   Params: {
     platform: string
   }
 }
 
-type QuerySession = {
+export type QuerySession = {
   Querystring: {
     session: string | undefined
   }
@@ -66,7 +47,10 @@ function getSignData(request: FastifyRequest<QuerySession>): string {
   return EmptyState
 }
 
-function loginHandler(request: FastifyRequest<ParamPlatform & QuerySession>, reply: FastifyReply) {
+export function platformLoginHandler(
+  request: FastifyRequest<ParamPlatform & QuerySession>,
+  reply: FastifyReply
+) {
   const platform = request.params.platform
 
   const oauth2Service = request.server.app.oauth2Service
@@ -84,7 +68,7 @@ function loginHandler(request: FastifyRequest<ParamPlatform & QuerySession>, rep
   return oauth2Handler.getPublicData(state)
 }
 
-function allPlatformsHandler(request: FastifyRequest<QuerySession>, reply: FastifyReply) {
+export function allPlatformsHandler(request: FastifyRequest<QuerySession>, reply: FastifyReply) {
   const oauth2Service = request.server.app.oauth2Service
   const toSign = getSignData(request)
   const state = oauth2Service.signer.signState(toSign)
@@ -92,7 +76,7 @@ function allPlatformsHandler(request: FastifyRequest<QuerySession>, reply: Fasti
   return data
 }
 
-async function loginCallbackHandler(
+export async function loginCallbackHandler(
   request: FastifyRequest<LoginCallbackRequest>,
   reply: FastifyReply
 ) {
@@ -228,7 +212,10 @@ async function loginCallbackHandler(
   }
 }
 
-async function externalLoginHandler(request: FastifyRequest<QuerySession>, reply: FastifyReply) {
+export async function externalLoginHandler(
+  request: FastifyRequest<QuerySession>,
+  reply: FastifyReply
+) {
   const session: string | undefined = request.query.session
 
   const validParameter = session !== undefined && session.length > 0
