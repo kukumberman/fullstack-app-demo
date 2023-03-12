@@ -68,8 +68,6 @@ export async function silentFetchUserModelFromPayload(
     const userService = request.server.app.userService
     request.currentUser = await userService.findOneById(id)
   }
-
-  next()
 }
 
 export function throwErrorIfUserPayloadNotFound(
