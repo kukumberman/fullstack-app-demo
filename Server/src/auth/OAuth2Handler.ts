@@ -43,6 +43,8 @@ export abstract class OAuth2Handler {
 
   abstract isDataValid(data: any): boolean
 
+  abstract updateUserFields(user: UserModel): void
+
   fetchProfile(token: Token): Promise<any> {
     return fetchProfile(this.profileApiUrl, token)
   }
@@ -158,6 +160,12 @@ export class DiscordOAuth2Handler extends OAuth2Handler {
   isDataValid(data: any): boolean {
     return this.validateFunction(data)
   }
+
+  updateUserFields(user: UserModel): void {
+    const discordFields = user.data.signIn.platforms.discord!
+    user.data.app.avatar = `https://cdn.discordapp.com/avatars/${discordFields.id}/${discordFields.avatar}.png`
+    user.data.app.nickname.value = `${discordFields.username}#${discordFields.discriminator}`
+  }
 }
 
 export class GoogleOAuth2Handler extends OAuth2Handler {
@@ -243,5 +251,11 @@ export class GoogleOAuth2Handler extends OAuth2Handler {
 
   isDataValid(data: any): boolean {
     return this.validateFunction(data)
+  }
+
+  updateUserFields(user: UserModel): void {
+    const googleFields = user.data.signIn.platforms.google!
+    user.data.app.avatar = googleFields.picture
+    user.data.app.nickname.value = googleFields.name
   }
 }

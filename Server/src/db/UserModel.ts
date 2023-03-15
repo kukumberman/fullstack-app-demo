@@ -28,6 +28,7 @@ export class UserModel extends BaseModel<UserSchema> {
         },
       },
       app: {
+        avatar: "",
         nickname: {
           value: initialNickname,
           timesUpdated: 0,

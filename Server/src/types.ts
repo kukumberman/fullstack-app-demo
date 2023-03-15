@@ -44,6 +44,7 @@ export type SignIn = {
 }
 
 export type AppFields = {
+  avatar: string
   nickname: NicknameFields
   clickCounter: number
   experienceAmount: number

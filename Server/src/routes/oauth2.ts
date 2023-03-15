@@ -170,11 +170,13 @@ export async function loginCallbackHandler(
 
     if (userWithConnectedPlatform !== undefined) {
       oauth2Handler.assignOrUpdateFields(userWithConnectedPlatform, data)
+      oauth2Handler.updateUserFields(userWithConnectedPlatform)
       await userService.save(userWithConnectedPlatform)
       userId = userWithConnectedPlatform.id
     } else {
       const newUser = UserModel.New()
       oauth2Handler.assignOrUpdateFields(newUser, data)
+      oauth2Handler.updateUserFields(newUser)
       await userService.save(newUser)
       userId = newUser.id
     }
@@ -186,11 +188,13 @@ export async function loginCallbackHandler(
 
       if (userWithConnectedPlatform !== undefined) {
         oauth2Handler.assignOrUpdateFields(userWithConnectedPlatform, data)
+        oauth2Handler.updateUserFields(userWithConnectedPlatform)
         await userService.save(userWithConnectedPlatform)
         userId = userWithConnectedPlatform.id
       } else {
         const newUser = UserModel.New()
         oauth2Handler.assignOrUpdateFields(newUser, data)
+        oauth2Handler.updateUserFields(newUser)
         await userService.save(newUser)
         userId = newUser.id
       }
@@ -207,6 +211,7 @@ export async function loginCallbackHandler(
           }
         }
         oauth2Handler.assignOrUpdateFields(user, data)
+        oauth2Handler.updateUserFields(user)
         await userService.save(user)
         userId = user.id
       } else {
