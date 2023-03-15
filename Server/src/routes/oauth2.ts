@@ -200,7 +200,7 @@ export async function loginCallbackHandler(
       }
 
       useExternalLogin = true
-      externalLoginSession = payload
+      externalLoginSession = payload.substring(ExternalPrefix.length)
     } else {
       const user: UserModel | undefined = await userService.findOneById(payload)
       if (user !== undefined) {
@@ -241,6 +241,7 @@ export async function externalLoginHandler(
   const validParameter = session !== undefined && session.length > 0
 
   if (!validParameter) {
+    reply.code(400)
     return {
       ok: false,
       message: "param",
@@ -252,6 +253,7 @@ export async function externalLoginHandler(
   const tokenPair: JwtTokenPair | undefined = externalLogin.popEntry<JwtTokenPair>(session)
 
   if (tokenPair === undefined) {
+    reply.code(400)
     return {
       ok: false,
       message: "not found",
